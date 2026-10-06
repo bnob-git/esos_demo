@@ -1,5 +1,8 @@
 #! /bin/sh
 
+# The CRM_notify_* variables are exported by crm_mon (ClusterMon RA).
+# shellcheck disable=SC2154
+
 # This is a helper script intended to be used with the ClusterMon RA. It
 # uses environment variables from the crm_mon binary; the original script is
 # based on this SNMP helper script from Florian Crouzat:
@@ -14,7 +17,7 @@
 #     meta target-role="Started"
 
 # Test for a failed monitor operation, or anything that isn't monitor
-if [ "x${CRM_notify_rc}" != "x0" -a "x${CRM_notify_task}" = "xmonitor" ] || \
+if [ "x${CRM_notify_rc}" != "x0" ] && [ "x${CRM_notify_task}" = "xmonitor" ] || \
 	[ "x${CRM_notify_task}" != "xmonitor" ] && \
 	[ -n "${CRM_notify_recipient}" ]; then
 	# Send a notification email

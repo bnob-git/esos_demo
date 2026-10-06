@@ -1,4 +1,6 @@
-#! /bin/sh
+#! /bin/bash
+
+set -euo pipefail
 
 # Script that takes an uncompressed ESOS image (after 'image' target) and the
 # path to an "isolinux" directory containing the ISO Linux components,
@@ -22,7 +24,7 @@ if [ "x$(whoami)" != "xroot" ]; then
 fi
 
 # Check arguments
-if [ "x${1}" = "x-h" -o "x${1}" = "x--help" ]; then
+if [ "${1:-}" = "-h" ] || [ "${1:-}" = "--help" ]; then
     usage
 fi
 if [ ${#} -le 0 ]; then
@@ -32,7 +34,7 @@ fi
 # Variable setup
 ISOLINUX_DIR="${1}"
 shift
-ADDITIONAL_FILES="${@}"
+ADDITIONAL_FILES="${*}"
 SELF="$(readlink -f "${0}")"
 ESOS_BUILD_DIR="$(readlink -f "$(dirname "${SELF}")")"
 echo "### ESOS build directory: ${ESOS_BUILD_DIR}"
@@ -98,7 +100,7 @@ if [ "x${ADDITIONAL_FILES}" != "x" ]; then
     ISO_FILES="${ISO_FILES} ${ADDITIONAL_FILES}"
 fi
 for i in ${ISO_FILES}; do
-    ln -s $(readlink -f ${i}) ${TEMP_DIR}/$(basename ${i})
+    ln -s "$(readlink -f "${i}")" "${TEMP_DIR}/$(basename "${i}")"
 done
 
 # Explanation of arguments used with 'genisoimage' below:

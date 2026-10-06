@@ -34,9 +34,6 @@ fi
 if [ -f "/lib/modules/$(uname -r)/extra/ocs_fc_scst.ko" ]; then
     OPTL_MODS="${OPTL_MODS} ocs_fc_scst"
 fi
-if [ -f "/lib/modules/$(uname -r)/extra/chfcoe.ko" ]; then
-    OPTL_MODS="${OPTL_MODS} chfcoe"
-fi
 
 
 scst_start() {

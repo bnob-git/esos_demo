@@ -1,4 +1,4 @@
-#! /bin/sh
+#! /bin/bash
 
 # A simple utility script which reads the SBD configuration file and loops
 # through all SBD block devices, clearing message slots for all nodes. This

@@ -1,4 +1,4 @@
-#! /bin/sh
+#! /bin/bash
 
 # System startup script; this script will check for crash dump files, grab some
 # information from the ESOS system, and then emails the root user everything.
@@ -18,7 +18,7 @@ if ! grep -q esos_persist /proc/cmdline; then
 fi
 if ls ${LOGS_MNT}/*dumpfile* > /dev/null 2>&1; then
 	dump_files=""
-	for i in $(ls ${LOGS_MNT}/*dumpfile*); do
+	for i in "${LOGS_MNT}"/*dumpfile*; do
 		dump_files="${dump_files}${i}\n"
 	done
 fi

@@ -1,13 +1,17 @@
-dnl Wrapper for AC_CHECK_PROG that kills configure script if program is missing
+dnl Wrapper for AC_PATH_PROG that kills configure script if program is missing;
+dnl the bare program name is substituted (not the absolute host path) since the
+dnl generated Makefile is also used inside the chroot where paths can differ
 AC_DEFUN([MY_PATH_PROG],
-	[AC_CHECK_PROG(m4_default([$2],[$1]),[$1],[$1],NOT_FOUND,$PATH:/sbin:/usr/sbin:/usr/local/sbin)
-	test $m4_default([$2],[$1]) == NOT_FOUND && AC_MSG_ERROR([program $1 is required])])
+	[AC_PATH_PROG(m4_default([$2],[$1])[_path],[$1],NOT_FOUND,$PATH:/sbin:/usr/sbin:/usr/local/sbin)
+	test "$m4_default([$2],[$1])_path" = NOT_FOUND && AC_MSG_ERROR([program $1 is required])
+	m4_default([$2],[$1])="$1"
+	AC_SUBST(m4_default([$2],[$1]))])
 
 AC_INIT()
 
 dnl Must be a 64-bit Linux host
 AC_MSG_CHECKING([if this is a x86-64 Linux host])
-if test "`uname -o`" == "GNU/Linux" && test "`uname -m`" == "x86_64"
+if test "`uname -o`" = "GNU/Linux" && test "`uname -m`" = "x86_64"
 then
 	AC_MSG_RESULT([yes])
 else
@@ -17,9 +21,9 @@ fi
 
 dnl Compiler checks
 AC_PROG_CC
-AC_LANG_C
+AC_LANG([C])
 AC_PROG_CXX
-AC_LANG_CPLUSPLUS
+AC_LANG([C++])
 
 dnl Check for all required utilities/tools
 MY_PATH_PROG([bash])
@@ -108,7 +112,7 @@ if test -d "${chroot_dir}"; then
 	${mkdir} -p ${chroot_dir}/boot/grub || exit 1
 	${mkdir} -p ${chroot_dir}/root/.ssh || exit 1
 	${touch} ${chroot_dir}/root/.bash_history || exit 1
-	${mkdir} -p ${chroot_dir}/mnt/{root,conf,logs,data,vdisks,mhvtl} || exit 1
+	${mkdir} -p ${chroot_dir}/mnt/{root,conf,logs,data,vdisks} || exit 1
 	${mkdir} -p ${chroot_dir}/lib/firmware || exit 1
 	${mkdir} -p ${chroot_dir}/usr/{bin,sbin,libexec,lib} || exit 1
 	${mkdir} -p ${chroot_dir}/usr/local/{bin,sbin,lib} || exit 1
@@ -252,36 +256,6 @@ AS_IF([test "x$enable_qemu" = "xyes"],
 	[build_opts="${build_opts} qemu"; opt_suffix="${opt_suffix}V"])
 AC_SUBST(enable_qemu, ${enable_qemu})
 AC_MSG_NOTICE([qemu: ${enable_qemu}])
-
-dnl Optional feature mhvtl
-AC_ARG_ENABLE(mhvtl,
-	AS_HELP_STRING([--enable-mhvtl], [build and include mhVTL (broken)]),
-	AS_IF([test "x${enableval}" = "xyes" || test "x${enableval}" = "xno"],
-	[enable_mhvtl="${enableval}"], [enable_mhvtl="no"]), enable_mhvtl="no")
-AS_IF([test "x$enable_mhvtl" = "xyes"],
-	[build_opts="${build_opts} mhvtl"; opt_suffix="${opt_suffix}m"])
-AC_SUBST(enable_mhvtl, ${enable_mhvtl})
-AC_MSG_NOTICE([mhvtl: ${enable_mhvtl}])
-
-dnl Optional feature eio
-AC_ARG_ENABLE(eio,
-	AS_HELP_STRING([--enable-eio], [build and include EnhanceIO (broken)]),
-	AS_IF([test "x${enableval}" = "xyes" || test "x${enableval}" = "xno"],
-	[enable_eio="${enableval}"], [enable_eio="no"]), enable_eio="no")
-AS_IF([test "x$enable_eio" = "xyes"],
-	[build_opts="${build_opts} eio"; opt_suffix="${opt_suffix}e"])
-AC_SUBST(enable_eio, ${enable_eio})
-AC_MSG_NOTICE([eio: ${enable_eio}])
-
-dnl Optional feature btier
-AC_ARG_ENABLE(btier,
-	AS_HELP_STRING([--enable-btier], [build and include BTIER (broken)]),
-	AS_IF([test "x${enableval}" = "xyes" || test "x${enableval}" = "xno"],
-	[enable_btier="${enableval}"], [enable_btier="no"]), enable_btier="no")
-AS_IF([test "x$enable_btier" = "xyes"],
-	[build_opts="${build_opts} btier"; opt_suffix="${opt_suffix}b"])
-AC_SUBST(enable_btier, ${enable_btier})
-AC_MSG_NOTICE([btier: ${enable_btier}])
 
 dnl Optional feature memcached
 AC_ARG_ENABLE(memcached,
@@ -468,30 +442,6 @@ AC_SUBST(ocs_sdk_dir, ${ocs_sdk_dir})
 AC_SUBST(with_ocs_sdk, ${with_ocs_sdk})
 AC_MSG_NOTICE([ocs_sdk: ${with_ocs_sdk}])
 
-dnl Optional package uwire (user provides package file)
-AC_ARG_WITH(uwire,
-	AS_HELP_STRING([--with-uwire=PATH],
-	[build and include uwire; PATH is the uwire package file to use]),
-	AS_IF([test "x${withval}" != "xyes" && test "x${withval}" != "xno"],
-	[uwire_file="${withval}"; with_uwire="yes"],
-	[with_uwire="no"]), with_uwire="no")
-if test "x${with_uwire}" = "xyes"; then
-	AC_MSG_ERROR([support for Chelsio Unified Wire adapters is broken])
-	if test -f "${uwire_file}"; then
-		AC_MSG_NOTICE([extracting the uwire package file...])
-		uwire_dir="${chroot_dir}/build/uwire"
-		${mkdir} -p ${uwire_dir} || exit 1
-		${tar} xfz ${uwire_file} --strip-components=1 -C ${uwire_dir} || exit 1
-	else
-		AC_MSG_ERROR([unable to access the uwire file: ${uwire_file}])
-	fi
-fi
-AS_IF([test "x$with_uwire" = "xyes"],
-	[build_opts="${build_opts} uwire"; opt_suffix="${opt_suffix}u"])
-AC_SUBST(uwire_dir, ${uwire_dir})
-AC_SUBST(with_uwire, ${with_uwire})
-AC_MSG_NOTICE([uwire: ${with_uwire}])
-
 dnl Optional package mlnx_ofed (user provides package file)
 AC_ARG_WITH(mlnx_ofed,
 	AS_HELP_STRING([--with-mlnx_ofed=PATH],
@@ -622,4 +572,5 @@ AS_IF([test "x${opt_suffix}" != "x"], [opt_suffix="_${opt_suffix}"])
 AC_SUBST(build_opts, m4_strip($(echo ${build_opts})))
 AC_SUBST(opt_suffix, m4_strip($(echo ${opt_suffix})))
 
-AC_OUTPUT(Makefile)
+AC_CONFIG_FILES([Makefile])
+AC_OUTPUT

@@ -26,13 +26,12 @@ users:x:100:games
 nofiles:x:200:
 smmsp:x:209:smmsp
 utmp:x:406:
-nogroup::65533:vtl
+nogroup::65533:
 nobody::65534:
 sshd:x:22:
 cron:x:16:
 shadow:x:42:
 haclient:x:101:hacluster
-vtl:x:102:vtl
 nagios:x:498:nagios
 nut:x:103:nutmon
 input:x:999:

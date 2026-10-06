@@ -1,4 +1,4 @@
-#! /bin/sh
+#! /bin/bash
 
 # This script should be run as a cron job on a regular interval. It will
 # perform several system checks such as available disk space, free physical
@@ -24,10 +24,7 @@ for i in $(${HW_RAID_CLI} --list-logical-drives); do
     ctrlr_type="$(echo ${i} | cut -d, -f1)"
     ctrlr_id="$(echo ${i} | cut -d, -f2)"
     ld_id="$(echo ${i} | cut -d, -f3)"
-    ld_level="$(echo ${i} | cut -d, -f4)"
     ld_state="$(echo ${i} | cut -d, -f5)"
-    ld_size="$(echo ${i} | cut -d, -f6)"
-    ld_name="$(echo ${i} | cut -d, -f7)"
     if [[ ("${ctrlr_type}" = "MegaRAID" && "${ld_state}" != "Optl") || \
         ("${ctrlr_type}" = "PERC" && "${ld_state}" != "Optl") || \
         ("${ctrlr_type}" = "AACRAID" && "${ld_state}" != "Optimal") ]]; then
@@ -49,8 +46,6 @@ for i in $(${HW_RAID_CLI} --list-physical-drives); do
     pd_encl_id="$(echo ${i} | cut -d, -f3)"
     pd_slot_num="$(echo ${i} | cut -d, -f4)"
     pd_state="$(echo ${i} | cut -d, -f5)"
-    pd_size="$(echo ${i} | cut -d, -f6)"
-    pd_model="$(echo ${i} | cut -d, -f7)"
     if [[ ("${ctrlr_type}" = "MegaRAID" && "${pd_state}" != "UGood" && \
         "${pd_state}" != "Onln" && "${pd_state}" != "GHS" && \
         "${pd_state}" != "JBOD") || \
@@ -75,7 +70,7 @@ if [ -x "${MEGACLI}" ]; then
     adp_count=$(${MEGACLI} -adpCount -NoLog | grep "Controller Count:" | \
         cut -d: -f2 | tr -d ' ' | tr -d '.' | tr -d '\n')
     echo "Number of adapters found: ${adp_count}"
-    for adapter in $(seq 0 $(expr ${adp_count} - 1)); do
+    for adapter in $(seq 0 "$(expr ${adp_count} - 1)"); do
         echo "Checking physical drives for media errors..."
         pd_count=0
         SAVED_IFS=${IFS}
@@ -83,8 +78,6 @@ if [ -x "${MEGACLI}" ]; then
         for i in $(${MEGACLI} -PDList -a${adapter} -NoLog); do
             if echo "${i}" | grep "Firmware state:" > /dev/null 2>&1; then
                 pd_count=$(expr ${pd_count} + 1)
-                drv_state=$(echo "${i}" | cut -d: -f2 | sed 's/^ *//' | \
-                    tr -d '\n')
                 # We check the firmware state above, don't check twice
             elif echo "${i}" | grep "Media Error Count:" > /dev/null 2>&1; then
                 media_err=$(echo "${i}" | cut -d: -f2 | sed 's/^ *//' | \
@@ -181,7 +174,7 @@ if [ "${kb_mem_good}" -gt "${MEM_KB_MIN_THRESH}" ]; then
     fi
 else
     # Check using the percentage
-    if [ x$(perl -e "print ${prct_mem_used} > ${MEM_PRCT_THRESH}") = "x1" ]; \
+    if [ "x$(perl -e "print ${prct_mem_used} > ${MEM_PRCT_THRESH}")" = "x1" ]; \
         then
         echo "** Warning! Maximum memory used threshold percent" \
             "($(echo ${MEM_PRCT_THRESH} | awk '{ printf("%d", $1 * 100) }')%)" \
@@ -205,7 +198,7 @@ prct_disk_used=$(echo "${disk_used} ${disk_total}" | \
     awk '{ printf("%.1g", $1 / $2) }')
 echo -e "Disk Used Percent:\t$(echo ${prct_disk_used} | \
     awk '{ printf("%d", $1 * 100) }')%"
-if [ x$(perl -e "print ${prct_disk_used} > ${DISK_PRCT_THRESH}") = "x1" ]; then
+if [ "x$(perl -e "print ${prct_disk_used} > ${DISK_PRCT_THRESH}")" = "x1" ]; then
     echo "** Warning! Maximum disk space used threshold percent" \
         "($(echo ${DISK_PRCT_THRESH} | awk '{ printf("%d", $1 * 100) }')%)" \
         "has been exceeded..." 1>&2
