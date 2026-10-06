@@ -234,9 +234,9 @@ int readTargetData(char *label_msg[]) {
                     (strcmp(dir_entry->d_name, ".") != 0) &&
                     (strcmp(dir_entry->d_name, "..") != 0)) {
                 /* Store the driver name for this target */
-                snprintf(driver_name[j], MAX_SYSFS_ATTR_SIZE, tgt_drivers[i]);
+                snprintf(driver_name[j], MAX_SYSFS_ATTR_SIZE, "%s", tgt_drivers[i]);
                 /* Store the target name */
-                snprintf(tgt_name[j], MAX_SYSFS_ATTR_SIZE, dir_entry->d_name);
+                snprintf(tgt_name[j], MAX_SYSFS_ATTR_SIZE, "%s", dir_entry->d_name);
                 /* Get the target enabled/disabled attribute */
                 snprintf(attr_path, MAX_SYSFS_PATH_SIZE,
                         "%s/targets/%s/%s/enabled", SYSFS_SCST_TGT,
@@ -326,14 +326,15 @@ int readTargetData(char *label_msg[]) {
             snprintf(attr_path, MAX_SYSFS_PATH_SIZE, "%s/%s/node_guid",
                     SYSFS_INFINIBAND, dir_entry->d_name);
             readAttribute(attr_path, attr_val);
-            snprintf(ib_node_guid[ib_adp_cnt], MAX_SYSFS_ATTR_SIZE, attr_val);
+            snprintf(ib_node_guid[ib_adp_cnt], MAX_SYSFS_ATTR_SIZE, "%s", attr_val);
 
             /* Get the port rate/speed */
             // TODO: It may be incorrect to assume there is only 1 port!
             snprintf(attr_path, MAX_SYSFS_PATH_SIZE, "%s/%s/ports/1/rate",
                     SYSFS_INFINIBAND, dir_entry->d_name);
             readAttribute(attr_path, attr_val);
-            snprintf(ib_port_speed[ib_adp_cnt], MAX_SYSFS_ATTR_SIZE, attr_val);
+            snprintf(ib_port_speed[ib_adp_cnt], MAX_SYSFS_ATTR_SIZE, "%s",
+                    attr_val);
         }
         ib_adp_cnt++;
     }
@@ -566,6 +567,8 @@ int readSessionData(char *label_msg[]) {
             if (read_io_kb[max_index] < read_io_kb[j])
                 max_index = j;
         }
+        if (max_index == i)
+            continue;
         /* Set temporary variable */
         strncpy(tmp_init_name, init_names[i], MAX_SYSFS_ATTR_SIZE);
         tmp_init_name[sizeof tmp_init_name - 1] = '\0';
@@ -574,13 +577,13 @@ int readSessionData(char *label_msg[]) {
         tmp_read_io = read_io_kb[i];
         tmp_write_io = write_io_kb[i];
         /* Set current position variable with new maximum */
-        strncpy(init_names[i], init_names[max_index], MAX_SYSFS_ATTR_SIZE);
+        snprintf(init_names[i], MAX_SYSFS_ATTR_SIZE, "%s", init_names[max_index]);
         lun_count[i] = lun_count[max_index];
         active_cmds[i] = active_cmds[max_index];
         read_io_kb[i] = read_io_kb[max_index];
         write_io_kb[i] = write_io_kb[max_index];
         /* Move variable to old location */
-        strncpy(init_names[max_index], tmp_init_name, MAX_SYSFS_ATTR_SIZE);
+        snprintf(init_names[max_index], MAX_SYSFS_ATTR_SIZE, "%s", tmp_init_name);
         lun_count[max_index] = tmp_lun_cnt;
         active_cmds[max_index] = tmp_act_cmds;
         read_io_kb[max_index] = tmp_read_io;

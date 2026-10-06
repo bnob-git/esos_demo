@@ -49,7 +49,8 @@ void networkDialog(CDKSCREEN *main_cdk_screen) {
             *short_label_msg[NET_SHORT_INFO_LINES] = {NULL},
             *poten_slaves[MAX_NET_IFACE] = {NULL},
             *poten_br_members[MAX_NET_IFACE] = {NULL};
-    char *error_msg = NULL, *temp_pstr = NULL, *strtok_result = NULL;
+    char *error_msg = NULL, *temp_pstr = NULL, *strtok_result = NULL,
+            *list_copy = NULL;
     const char *conf_hostname = NULL, *conf_domainname = NULL,
             *conf_defaultgw = NULL, *conf_nameserver1 = NULL,
             *conf_nameserver2 = NULL, *conf_nameserver3 = NULL,
@@ -619,7 +620,11 @@ void networkDialog(CDKSCREEN *main_cdk_screen) {
                 setCDKSelectionBackgroundAttrib(slave_select,
                         g_color_dialog_text[g_curr_theme]);
                 /* Parse the existing slaves (if any) */
-                strtok_result = strtok(conf_slaves, ",");
+                /* strtok() modifies its input; iniparser strings are const */
+                FREE_NULL(list_copy);
+                list_copy = strdup(conf_slaves);
+                strtok_result = (list_copy != NULL) ?
+                        strtok(list_copy, ",") : NULL;
                 while (strtok_result != NULL) {
                     for (i = 0; i < poten_slave_cnt; i++) {
                         if (strstr(strStrip(strtok_result), poten_slaves[i]))
@@ -643,7 +648,11 @@ void networkDialog(CDKSCREEN *main_cdk_screen) {
                 setCDKSelectionBackgroundAttrib(br_member_select,
                         g_color_dialog_text[g_curr_theme]);
                 /* Parse the existing members (if any) */
-                strtok_result = strtok(conf_brmembers, ",");
+                /* strtok() modifies its input; iniparser strings are const */
+                FREE_NULL(list_copy);
+                list_copy = strdup(conf_brmembers);
+                strtok_result = (list_copy != NULL) ?
+                        strtok(list_copy, ",") : NULL;
                 while (strtok_result != NULL) {
                     for (i = 0; i < poten_br_member_cnt; i++) {
                         if (strstr(strStrip(strtok_result),
@@ -952,6 +961,7 @@ void networkDialog(CDKSCREEN *main_cdk_screen) {
         FREE_NULL(poten_slaves[i]);
         FREE_NULL(poten_br_members[i]);
     }
+    FREE_NULL(list_copy);
     if (net_screen != NULL) {
         destroyCDKScreenObjects(net_screen);
         destroyCDKScreen(net_screen);
@@ -1137,7 +1147,7 @@ void mailDialog(CDKSCREEN *main_cdk_screen) {
             mail_window_lines = 0, mail_window_cols = 0;
     char new_mailhub[MAX_INI_VAL] = {0}, new_authmethod[MAX_INI_VAL] = {0},
             new_usetls[MAX_INI_VAL] = {0}, new_usestarttls[MAX_INI_VAL] = {0},
-            hostname[MISC_STRING_LEN] = {0};
+            hostname[MISC_STRING_LEN] = {0}, mailhub_buff[MAX_INI_VAL] = {0};
     char *mailhub_host = NULL, *mailhub_port = NULL, *error_msg = NULL;
     const char *conf_root = NULL, *conf_mailhub = NULL, *conf_authuser = NULL,
             *conf_authpass = NULL, *conf_authmethod = NULL,
@@ -1219,8 +1229,9 @@ void mailDialog(CDKSCREEN *main_cdk_screen) {
         setCDKEntryValue(email_addr, conf_root);
 
         /* Split up mailhub string from configuration */
-        mailhub_host = conf_mailhub;
-        if ((mailhub_port = strchr(conf_mailhub, ':')) != NULL) {
+        snprintf(mailhub_buff, sizeof mailhub_buff, "%s", conf_mailhub);
+        mailhub_host = mailhub_buff;
+        if ((mailhub_port = strchr(mailhub_buff, ':')) != NULL) {
             *mailhub_port = '\0';
             mailhub_port++;
         }
@@ -2408,7 +2419,8 @@ void dateTimeDialog(CDKSCREEN *main_cdk_screen) {
                 break;
             }
         } else {
-            fgets(ntp_serv_val, MAX_NTP_LEN, ntp_server_file);
+            if (fgets(ntp_serv_val, MAX_NTP_LEN, ntp_server_file) == NULL)
+                ntp_serv_val[0] = '\0';
             fclose(ntp_server_file);
             remove_me = strrchr(ntp_serv_val, '\n');
             if (remove_me)

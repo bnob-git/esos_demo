@@ -271,12 +271,11 @@ void getSCSTTgtChoice(CDKSCREEN *cdk_screen, char tgt_name[],
 
         /* Check exit from widget and copy data if normal */
         if (scst_tgt_list->exitType == vNORMAL) {
-            strncpy(tgt_name, scst_tgt_name[tgt_choice], MAX_SYSFS_ATTR_SIZE);
+            snprintf(tgt_name, MAX_SYSFS_ATTR_SIZE, "%s", scst_tgt_name[tgt_choice]);
             /* We only set the target driver if we weren't
              * given an initial value */
             if (tgt_driver[0] == '\0')
-                strncpy(tgt_driver, scst_tgt_driver[tgt_choice],
-                    MAX_SYSFS_ATTR_SIZE);
+                snprintf(tgt_driver, MAX_SYSFS_ATTR_SIZE, "%s", scst_tgt_driver[tgt_choice]);
         }
         break;
     }
@@ -363,8 +362,7 @@ void getSCSTGroupChoice(CDKSCREEN *cdk_screen, char tgt_name[],
 
         /* Check exit from widget and copy data if normal */
         if (scst_grp_list->exitType == vNORMAL)
-            strncpy(tgt_group, scst_tgt_groups[group_choice],
-                    MAX_SYSFS_ATTR_SIZE);
+            snprintf(tgt_group, MAX_SYSFS_ATTR_SIZE, "%s", scst_tgt_groups[group_choice]);
         break;
     }
 
@@ -713,10 +711,9 @@ void getSCSTDevChoice(CDKSCREEN *cdk_screen, char dev_name[],
 
         /* Check exit from widget and copy data if normal */
         if (scst_dev_list->exitType == vNORMAL) {
-            strncpy(dev_name, scst_dev_name[dev_choice],
-                    MAX_SYSFS_ATTR_SIZE);
-            strncpy(dev_handler, scst_dev_hndlr[dev_choice],
-                    MAX_SYSFS_ATTR_SIZE);
+            snprintf(dev_name, MAX_SYSFS_ATTR_SIZE, "%s", scst_dev_name[dev_choice]);
+            snprintf(dev_handler, MAX_SYSFS_ATTR_SIZE, "%s",
+                    scst_dev_hndlr[dev_choice]);
         }
         break;
     }
@@ -802,7 +799,7 @@ void getSCSTInitChoice(CDKSCREEN *cdk_screen, char tgt_name[],
 
         /* Check exit from widget and copy data if normal */
         if (lun_scroll->exitType == vNORMAL)
-            strncpy(initiator, init_list[lun_choice], MAX_SYSFS_ATTR_SIZE);
+            snprintf(initiator, MAX_SYSFS_ATTR_SIZE, "%s", init_list[lun_choice]);
         break;
     }
 
@@ -1215,9 +1212,15 @@ char *getBlockDevChoice(CDKSCREEN *cdk_screen) {
                 SAFE_ASPRINTF(&cmd_str,
                         "%s info --root --query symlink --name %s 2>&1",
                         UDEVADM_BIN, block_dev);
-                udevadm_cmd = popen(cmd_str, "r");
-                fgets(sym_links, sizeof (sym_links), udevadm_cmd);
-                if ((exit_stat = pclose(udevadm_cmd)) == -1) {
+                if ((udevadm_cmd = popen(cmd_str, "r")) == NULL) {
+                    exit_stat = -1;
+                } else {
+                    if (fgets(sym_links, sizeof (sym_links),
+                            udevadm_cmd) == NULL)
+                        sym_links[0] = '\0';
+                    exit_stat = pclose(udevadm_cmd);
+                }
+                if (exit_stat == -1) {
                     ret_val = -1;
                 } else {
                     if (WIFEXITED(exit_stat))
@@ -1233,11 +1236,12 @@ char *getBlockDevChoice(CDKSCREEN *cdk_screen) {
                     FREE_NULL(error_msg);
                     break;
                 }
-                /* We only want the first sym link */
-                dev_node_ptr = strtok(sym_links, " ");
-                assert(dev_node_ptr != NULL);
+                /* We only want the first sym link; fall back to the
+                 * kernel name if udev has none */
+                dev_node_ptr = strtok(sym_links, " \n");
                 snprintf(ret_buff, MAX_SYSFS_PATH_SIZE, "%s",
-                        strStrip(dev_node_ptr));
+                        (dev_node_ptr != NULL) ?
+                        strStrip(dev_node_ptr) : block_dev);
 
             } else if ((strstr(block_dev, "/dev/dm-")) != NULL) {
                 /* A /dev/dm-* device, we're assuming its
@@ -1460,8 +1464,7 @@ void getSCSTDevGrpChoice(CDKSCREEN *cdk_screen, char alua_dev_group[]) {
 
         /* Check exit from widget and copy data if normal */
         if (scst_dev_grp_list->exitType == vNORMAL)
-            strncpy(alua_dev_group, scst_dev_grp[dev_grp_choice],
-                    MAX_SYSFS_ATTR_SIZE);
+            snprintf(alua_dev_group, MAX_SYSFS_ATTR_SIZE, "%s", scst_dev_grp[dev_grp_choice]);
         break;
     }
 
@@ -1546,8 +1549,7 @@ void getSCSTTgtGrpChoice(CDKSCREEN *cdk_screen, char alua_dev_group[],
 
         /* Check exit from widget and copy data if normal */
         if (scst_tgt_grp_list->exitType == vNORMAL)
-            strncpy(alua_tgt_group, scst_tgt_groups[tgt_grp_choice],
-                MAX_SYSFS_ATTR_SIZE);
+            snprintf(alua_tgt_group, MAX_SYSFS_ATTR_SIZE, "%s", scst_tgt_groups[tgt_grp_choice]);
         break;
     }
 
@@ -1631,8 +1633,7 @@ void getSCSTDevGrpDevChoice(CDKSCREEN *cdk_screen, char alua_dev_group[],
 
         /* Check exit from widget and copy data if normal */
         if (scst_dev_grp_dev_list->exitType == vNORMAL)
-            strncpy(alua_dev_grp_dev, scst_device_names[dev_choice],
-                MAX_SYSFS_ATTR_SIZE);
+            snprintf(alua_dev_grp_dev, MAX_SYSFS_ATTR_SIZE, "%s", scst_device_names[dev_choice]);
         break;
     }
 
@@ -1720,8 +1721,7 @@ void getSCSTTgtGrpTgtChoice(CDKSCREEN *cdk_screen, char alua_dev_group[],
 
         /* Check exit from widget and copy data if normal */
         if (scst_tgt_grp_tgt_list->exitType == vNORMAL)
-            strncpy(alua_tgt_grp_tgt, scst_target_names[tgt_choice],
-                MAX_SYSFS_ATTR_SIZE);
+            snprintf(alua_tgt_grp_tgt, MAX_SYSFS_ATTR_SIZE, "%s", scst_target_names[tgt_choice]);
         break;
     }
 
