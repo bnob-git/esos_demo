@@ -10,6 +10,7 @@
 import urllib.error
 import urllib.request
 import glob
+import http.client
 import json
 import sys
 import subprocess
@@ -169,8 +170,8 @@ def list_tools():
             print(each['desc'])
             print('File Name: %s' % each['file'])
             print('Download URL: %s\n' % each['url'])
-    except (urllib.error.URLError, OSError, ValueError, KeyError,
-            TypeError) as err:
+    except (urllib.error.URLError, http.client.HTTPException, OSError,
+            ValueError, KeyError, TypeError) as err:
         print('An error occurred while fetching the JSON file! (%s)' % err)
         print('For a list of available RAID CLI tools, visit this URL: %s' %
               TOOL_JSON_URL)
