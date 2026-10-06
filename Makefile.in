@@ -73,9 +73,6 @@ enable_python_sql	:= @enable_python_sql@
 enable_zfs		:= @enable_zfs@
 enable_lessfs		:= @enable_lessfs@
 enable_qemu		:= @enable_qemu@
-enable_mhvtl		:= @enable_mhvtl@
-enable_eio		:= @enable_eio@
-enable_btier		:= @enable_btier@
 enable_memcached	:= @enable_memcached@
 enable_simple_tui	:= @enable_simple_tui@
 enable_auto_dhcp	:= @enable_auto_dhcp@
@@ -91,8 +88,6 @@ with_ocs_sdk		:= @with_ocs_sdk@
 ocs_sdk_dir		:= $(subst $(CHROOT_DIR),,@ocs_sdk_dir@)
 with_rapiddisk		:= @with_rapiddisk@
 rapiddisk_dir		:= $(subst $(CHROOT_DIR),,@rapiddisk_dir@)
-with_uwire		:= @with_uwire@
-uwire_dir		:= $(subst $(CHROOT_DIR),,@uwire_dir@)
 with_mlnx_ofed		:= @with_mlnx_ofed@
 mlnx_ofed_dir		:= $(subst $(CHROOT_DIR),,@mlnx_ofed_dir@)
 with_qla2xxx_scst	:= @with_qla2xxx_scst@
@@ -519,21 +514,6 @@ ifeq ($(enable_qemu),yes)
 	chroot_tgts += hivex.chroot
 	chroot_tgts += guestfs_app.chroot
 endif
-ifeq ($(enable_mhvtl),yes)
-	dist_files += $(addprefix $(DIST_FILES_DIR)/,\
-	mhvtl-1.5-3_release.tar.gz)
-	chroot_tgts += mhvtl.chroot
-endif
-ifeq ($(enable_eio),yes)
-	dist_files += $(addprefix $(DIST_FILES_DIR)/,\
-	EnhanceIO-master_20151029.tar.gz)
-	chroot_tgts += EnhanceIO.chroot
-endif
-ifeq ($(enable_btier),yes)
-	dist_files += $(addprefix $(DIST_FILES_DIR)/,\
-	btier-1.3.11.tar.gz)
-	chroot_tgts += btier.chroot
-endif
 ifeq ($(enable_memcached),yes)
 	dist_files += $(addprefix $(DIST_FILES_DIR)/,\
 	memcached-1.6.17.tar.gz)
@@ -563,9 +543,6 @@ ifeq ($(with_atto_scst),yes)
 endif
 ifeq ($(with_ocs_sdk),yes)
 	chroot_tgts += ocs_sdk.chroot
-endif
-ifeq ($(with_uwire),yes)
-	chroot_tgts += uwire.chroot
 endif
 ifeq ($(with_mlnx_ofed),yes)
 	chroot_tgts += mlnx_ofed.chroot
@@ -745,12 +722,6 @@ fetch: $(dist_files) ;
 $(dist_files):
 	$(QUIET) $(ECHO) "### Fetching $(@)"
 	$(WGET) -P $(DIST_FILES_DIR) $(dist_files_repo)/$(notdir $(@))
-	$(QUIET) cd $(DIST_FILES_DIR) && \
-	if ! $(GREP) $(notdir $(@)) $(SRC_DIR)/CHECKSUM.MD5 | \
-	  $(MD5SUM) -c -; then \
-	  $(RM) $(@); \
-	  exit 1; \
-	fi
 	$(QUIET) cd $(DIST_FILES_DIR) && \
 	if ! $(GREP) $(notdir $(@)) $(SRC_DIR)/CHECKSUM.SHA256 | \
 	  $(SHA256SUM) -c -; then \
@@ -1599,9 +1570,6 @@ gcc.chroot: glibc.chroot gmp mpfr mpc
 	$(QUIET) $(ECHO) "### Done $(@)"
 
 esos_kernels.chroot: kernel_ver = $(subst linux-,,$(notdir $(linux_src)))
-esos_kernels.chroot: mhvtl_src = $(wildcard /sources/mhvtl-*)
-esos_kernels.chroot: eio_src = $(wildcard /sources/EnhanceIO-*)
-esos_kernels.chroot: btier_src = $(wildcard /sources/btier-*)
 esos_kernels.chroot: zfs_src = $(wildcard /sources/zfs-*)
 esos_kernels.chroot: switchtec_src = $(wildcard /sources/cls_switchtec-*)
 esos_kernels.chroot: cls_base = $(switchtec_src)/Driver/Switchtec
@@ -1674,18 +1642,6 @@ esos_kernels.chroot: kernel_headers.chroot bc.chroot elfutils.chroot \
 	    KDIR=$(linux_src) QLA_INI_DIR=$(qla_ini_dir) QLA_DIR=$(qla_dir) \
 	    extraclean; \
 	  fi; \
-	  if [ "$(enable_mhvtl)" = "yes" ]; then \
-	    $(MAKE) --directory=$(mhvtl_src)/kernel KDIR=$(linux_src) clean; \
-	    $(MAKE) --directory=$(mhvtl_src)/kernel KDIR=$(linux_src) \
-	    distclean; \
-	  fi; \
-	  if [ "$(enable_eio)" = "yes" ]; then \
-	    $(MAKE) --directory=$(eio_src)/Driver/enhanceio \
-	    KERNEL_TREE=$(linux_src) PWD=$(eio_src)/Driver/enhanceio clean; \
-	  fi; \
-	  if [ "$(enable_btier)" = "yes" ]; then \
-	    $(MAKE) --directory=$(btier_src)/kernel/btier clean; \
-	  fi; \
 	  if [ "$(with_celerity_16_32)" = "yes" ]; then \
 	    $(MAKE) --directory=$(linux_src) M=$(celerity_16_32_dir)/src \
 	    clean; \
@@ -1706,14 +1662,6 @@ esos_kernels.chroot: kernel_headers.chroot bc.chroot elfutils.chroot \
 	    $(ocs_sdk_dir)/driver/linux/ocs_fc_scst/Makefile; \
 	    $(MAKE) --directory=$(linux_src) \
 	    M=$(ocs_sdk_dir)/driver/linux/ocs_fc_scst clean; \
-	  fi; \
-	  if [ "$(with_uwire)" = "yes" ]; then \
-	    $(MAKE) --directory=$(uwire_dir)/src/network clean; \
-	    $(MAKE) --directory=$(uwire_dir)/src/chfcoe/src \
-	    CXGB4_SRC_PATH="$(uwire_dir)/src/network/cxgb4" \
-	    CSIOSTOR_SRC_PATH="$(uwire_dir)/src/network/csiostor/include" \
-	    FIRMWARE_PATH="$(uwire_dir)/src/network/firmware" \
-	    KDIR=$(linux_src) clean; \
 	  fi; \
 	  if [ "$(with_bnxt_en)" = "yes" ]; then \
 	    $(MAKE) --directory=$(bnxt_en_dir) KDIR=$(linux_src) clean; \
@@ -1773,12 +1721,6 @@ esos_kernels.chroot: kernel_headers.chroot bc.chroot elfutils.chroot \
 	      --disable CONFIG_DEBUG_LOCK_ALLOC \
 	      --disable CONFIG_LOCKDEP; \
 	    fi; \
-	  fi; \
-	  if [ "$(with_uwire)" = "yes" ]; then \
-	    $(linux_src)/scripts/config --file $(linux_src)/.config \
-	    --disable CONFIG_CHELSIO_T4 \
-	    --disable CONFIG_CHELSIO_T4VF \
-	    --disable CONFIG_FRAME_POINTER; \
 	  fi; \
 	  $(ECHO) "### Compiling the Linux kernel..."; \
 	  $(MAKE) --directory=$(linux_src); \
@@ -1908,35 +1850,6 @@ esos_kernels.chroot: kernel_headers.chroot bc.chroot elfutils.chroot \
 	  KVER=$(kernel_ver)$$i fcst; \
 	  $(MAKE) --directory=$(scst_src) KDIR=$(linux_src) \
 	  KVER=$(kernel_ver)$$i fcst_install; \
-	  if [ "$(enable_mhvtl)" = "yes" ]; then \
-	    $(ECHO) "### Compiling the mhVTL module..."; \
-	    $(MAKE) --directory=$(mhvtl_src)/kernel KDIR=$(linux_src) \
-	    KVER=$(kernel_ver)$$i; \
-	    $(MKDIR) /lib/modules/$(kernel_ver)$$i/kernel/drivers/scsi; \
-	    $(INSTALL) -m 0644 $(mhvtl_src)/kernel/mhvtl.ko \
-	    /lib/modules/$(kernel_ver)$$i/kernel/drivers/scsi/; \
-	  fi; \
-	  if [ "$(enable_eio)" = "yes" ]; then \
-	    $(ECHO) "### Compiling the EnhanceIO driver..."; \
-	    $(MAKE) --directory=$(eio_src)/Driver/enhanceio \
-	    RHEL5_VER="" KERNEL_SOURCE_VERSION=$(kernel_ver)$$i \
-	    KERNEL_TREE=$(linux_src) PWD=$(eio_src)/Driver/enhanceio; \
-	    $(MKDIR) /lib/modules/$(kernel_ver)$$i/extra/enhanceio; \
-	    $(INSTALL) -m 0644 $(eio_src)/Driver/enhanceio/*.ko \
-	    /lib/modules/$(kernel_ver)$$i/extra/enhanceio/; \
-	  fi; \
-	  if [ "$(enable_btier)" = "yes" ]; then \
-	    $(ECHO) "### Compiling the BTIER module..."; \
-	    if [ ! -d $(btier_src)/$(notdir $(btier_src)).patch ]; then \
-	      $(PATCH) -d $(btier_src) -b \
-	      -B $(btier_src)/$(notdir $(btier_src)).patch/ -p1 < \
-	      $(chroot_build)/misc/$(notdir $(btier_src)).patch; \
-	    fi; \
-	    $(MAKE) --directory=$(linux_src) KVER=$(kernel_ver)$$i \
-	    M=$(btier_src)/kernel/btier modules; \
-	    $(INSTALL) -D -m 0644 $(btier_src)/kernel/btier/btier.ko \
-	    /lib/modules/$(kernel_ver)$$i/kernel/drivers/block/btier.ko; \
-	  fi; \
 	  if [ "$(with_celerity_16_32)" = "yes" ]; then \
 	    $(ECHO) "### Compiling the ATTO Celerity 16/32 HBA module..."; \
 	    $(MAKE) --directory=$(celerity_16_32_dir)/src KDIR=$(linux_src) \
@@ -1964,48 +1877,6 @@ esos_kernels.chroot: kernel_headers.chroot bc.chroot elfutils.chroot \
 	    $(INSTALL) -D -m 0644 \
 	    $(ocs_sdk_dir)/driver/linux/ocs_fc_scst/ocs_fc_scst.ko \
 	    /lib/modules/$(kernel_ver)$$i/extra/ocs_fc_scst.ko; \
-	  fi; \
-	  if [ "$(with_uwire)" = "yes" ]; then \
-	    $(ECHO) "### Compiling the Chelsio Uwire SCST module..."; \
-	    if [ ! -d $(uwire_dir)/cxgb4_pofcoe.patch ]; then \
-	      $(PATCH) -F 3 -d $(uwire_dir)/src/network/cxgb4 -b \
-	      -B $(uwire_dir)/cxgb4_pofcoe.patch/ -p1 < \
-	      $(uwire_dir)/src/chfcoe/patch/cxgb4_pofcoe.patch; \
-	    fi; \
-	    $(SED) -i 's/CXGB_FCOE_DBG(adapter/CXGB_FCOE_DBG(adap/g' \
-	    $(uwire_dir)/src/network/cxgb4/cxgb4_fcoe.c; \
-	    $(SED) -i 's/inline unsigned int/unsigned int/g' \
-	    $(uwire_dir)/src/network/cxgb4/l2t.h; \
-	    $(MAKE) --directory=$(uwire_dir)/src/network \
-	    KERNELRELEASE=$(kernel_ver)$$i DEBUG=1 KDIR=$(linux_src) \
-	    disable_bonding=1 po_fcoe=1 toe; \
-	    $(SED) -i 's/ln -sf $$(fixup_fwdir)\//ln -sf /g' \
-	    $(uwire_dir)/src/network/firmware/Makefile; \
-	    $(SED) -i 's/updates\/drivers/kernel\/drivers/' \
-	    $(uwire_dir)/src/network/csiostor/Makefile; \
-	    $(SED) -i 's/updates\/drivers/kernel\/drivers/' \
-	    $(uwire_dir)/src/network/cxgb4/Makefile; \
-	    $(SED) -i 's/updates\/drivers/kernel\/drivers/' \
-	    $(uwire_dir)/src/network/cxgb4vf/Makefile; \
-	    $(SED) -i 's/updates\/drivers/kernel\/drivers/' \
-	    $(uwire_dir)/src/network/iw_cxgb4/Makefile; \
-	    $(SED) -i 's/updates\/drivers/kernel\/drivers/' \
-	    $(uwire_dir)/src/network/t4_tom/Makefile; \
-	    $(SED) -i 's/updates\/drivers/kernel\/drivers/' \
-	    $(uwire_dir)/src/network/toecore/Makefile; \
-	    $(MAKE) --directory=$(uwire_dir)/src/network \
-	    KERNELRELEASE=$(kernel_ver)$$i DEBUG=1 KDIR=$(linux_src) \
-	    PREFIX="" fixup_fwdir=/lib/firmware/cxgb4 \
-	    disable_bonding=1 po_fcoe=1 utsrelease=$(kernel_ver)$$i install; \
-	    $(MAKE) --directory=$(uwire_dir)/src/chfcoe/src \
-	    KERNELRELEASE=$(kernel_ver)$$i \
-	    CXGB4_SRC_PATH="$(uwire_dir)/src/network/cxgb4" \
-	    CSIOSTOR_SRC_PATH="$(uwire_dir)/src/network/csiostor/include" \
-	    FIRMWARE_PATH="$(uwire_dir)/src/network/firmware" \
-	    KDIR="$(linux_src)" SCST_INC="/usr/include/scst" \
-	    target=1; \
-	    $(MAKE) --directory=$(linux_src) M="$(uwire_dir)/src/chfcoe/src" \
-	    KVER=$(kernel_ver)$$i modules_install; \
 	  fi; \
 	  if [ "$(with_bnxt_en)" = "yes" ]; then \
 	    $(ECHO) "### Compiling the Broadcom NetXtreme Ethernet module..."; \
@@ -2215,21 +2086,6 @@ ocs_sdk.chroot: glibc.chroot libxml2.chroot
 	/usr/sbin/
 	$(INSTALL) -m 0755 $(ocs_sdk_dir)/tools/bin/ocs_cpu_info.py \
 	/usr/sbin/
-	$(TOUCH) $(@)
-	$(QUIET) $(ECHO) "### Done $(@)"
-
-uwire.chroot: glibc.chroot
-	$(QUIET) $(ECHO) "### Building $(@)"
-	$(call chroot_only)
-	$(INSTALL) -m 0755 $(uwire_dir)/src/chfcoe/tools/chfcoe_perftune.sh \
-	/usr/sbin/
-	$(INSTALL) -m 0755 $(uwire_dir)/src/chfcoe/tools/chinfotool64 \
-	/usr/sbin/
-	$(MAKE) --directory=$(uwire_dir)/tools/cxgbtool
-	$(INSTALL) -m 0755 $(uwire_dir)/tools/cxgbtool/cxgbtool \
-	/usr/sbin/
-	$(INSTALL) -m 0444 $(uwire_dir)/tools/cxgbtool/cxgbtool.8 \
-	/usr/share/man/man8/
 	$(TOUCH) $(@)
 	$(QUIET) $(ECHO) "### Done $(@)"
 
@@ -3028,24 +2884,6 @@ resource-agents.chroot: glib.chroot glue.chroot docbook-xsl-nons.chroot
 	$(TOUCH) $(@)
 	$(QUIET) $(ECHO) "### Done $(@)"
 
-mhvtl.chroot: glibc.chroot lzo.chroot zlib.chroot
-	$(QUIET) $(ECHO) "### Building $(@)"
-	$(call chroot_only)
-	$(MAKE) --directory=$(tgt_src_dir) MHVTL_HOME_PATH="/mnt/mhvtl"
-	$(INSTALL) -m 755 $(tgt_src_dir)/usr/libvtlscsi.so /usr/lib/
-	$(INSTALL) -m 755 $(tgt_src_dir)/usr/libvtlcart.so /usr/lib/
-	$(INSTALL) -m 755 $(tgt_src_dir)/usr/vtltape /usr/bin/
-	$(INSTALL) -m 755 $(tgt_src_dir)/usr/vtllibrary /usr/bin/
-	$(INSTALL) -m 755 $(tgt_src_dir)/usr/vtlcmd /usr/bin/
-	$(INSTALL) -m 755 $(tgt_src_dir)/usr/mktape /usr/bin/
-	$(INSTALL) -m 755 $(tgt_src_dir)/usr/dump_tape /usr/bin/
-	$(INSTALL) -m 755 $(tgt_src_dir)/usr/edit_tape /usr/bin/
-	$(INSTALL) -m 755 $(tgt_src_dir)/usr/tapeexerciser /usr/bin/
-	$(INSTALL) -m 700 $(tgt_src_dir)/usr/build_library_config /usr/bin/
-	$(INSTALL) -m 700 $(tgt_src_dir)/usr/make_vtl_media /usr/bin/
-	$(TOUCH) $(@)
-	$(QUIET) $(ECHO) "### Done $(@)"
-
 lzo.chroot: glibc.chroot
 	$(QUIET) $(ECHO) "### Building $(@)"
 	$(call chroot_only)
@@ -3611,15 +3449,6 @@ bcache-tools.chroot: glibc.chroot util-linux.chroot openssl.chroot eudev.chroot
 	$(TOUCH) $(@)
 	$(QUIET) $(ECHO) "### Done $(@)"
 
-EnhanceIO.chroot: glibc.chroot
-	$(QUIET) $(ECHO) "### Building $(@)"
-	$(call chroot_only)
-	$(call apply_pkg_patch)
-	$(INSTALL) -m 0755 $(tgt_src_dir)/CLI/eio_cli /usr/sbin/
-	$(INSTALL) -m 0644 $(tgt_src_dir)/CLI/eio_cli.8 /usr/share/man/man8/
-	$(TOUCH) $(@)
-	$(QUIET) $(ECHO) "### Done $(@)"
-
 util-linux.chroot: glibc.chroot ncurses.chroot zlib.chroot
 	$(QUIET) $(ECHO) "### Building $(@)"
 	$(call chroot_only)
@@ -3687,31 +3516,6 @@ boost.chroot: glibc.chroot gcc.chroot
 	--without-random --without-regex --without-serialization \
 	--without-stacktrace --without-system --without-test --without-timer \
 	--witout-type_erasure --without-wave
-	$(TOUCH) $(@)
-	$(QUIET) $(ECHO) "### Done $(@)"
-
-btier.chroot: glibc.chroot
-	$(QUIET) $(ECHO) "### Building $(@)"
-	$(call chroot_only)
-	$(CC) -Wall -D_FILE_OFFSET_BITS=64 $(tgt_src_dir)/cli/btier_setup.c \
-	-o $(tgt_src_dir)/cli/btier_setup
-	$(CC) -Wall -D_FILE_OFFSET_BITS=64 $(tgt_src_dir)/cli/btier_inspect.c \
-	-o $(tgt_src_dir)/cli/btier_inspect
-	$(CC) -Wall $(tgt_src_dir)/tools/writetest.c -o \
-	$(tgt_src_dir)/tools/writetest
-	$(CC) -Wall $(tgt_src_dir)/tools/show_block_details.c \
-	-o $(tgt_src_dir)/tools/show_block_details
-	$(INSTALL) -D -m 755 $(tgt_src_dir)/cli/btier_setup \
-	/usr/sbin/btier_setup
-	$(INSTALL) -D -m 755 $(tgt_src_dir)/cli/btier_inspect \
-	/usr/sbin/btier_inspect
-	$(INSTALL) -D -m 644 $(tgt_src_dir)/man/btier_setup.1 \
-	usr/share/man/man1/btier_setup.1
-	$(INSTALL) -D -m 644 $(tgt_src_dir)/man/btier_inspect.1 \
-	/usr/share/man/man1/btier_inspect.1
-	$(INSTALL) -D -m 755 \
-	$(tgt_src_dir)/tools/contributed/migrate_blocks_freq.py \
-	/usr/sbin/migrate_blocks_freq.py
 	$(TOUCH) $(@)
 	$(QUIET) $(ECHO) "### Done $(@)"
 
@@ -5379,8 +5183,6 @@ image:
 	$(MKDIR) $(STAGING_DIR)/usr/lib/ocf/resource.d
 	$(CP) -R $(SRC_DIR)/misc/ocf/esos \
 	$(STAGING_DIR)/usr/lib/ocf/resource.d/
-	$(CP) -R $(SRC_DIR)/misc/ocf/brick \
-	$(STAGING_DIR)/usr/lib/ocf/resource.d/
 	$(CP) -R $(SRC_DIR)/misc/ocf/onesty \
 	$(STAGING_DIR)/usr/lib/ocf/resource.d/
 	$(CP) -R $(SRC_DIR)/misc/ocf/stmf-ha \
@@ -5423,10 +5225,6 @@ image:
 	$(CHMOD) 1777 $(STAGING_DIR)/var/tmp
 	$(CHMOD) 755 $(STAGING_DIR)/root
 	$(CHMOD) 700 $(STAGING_DIR)/root/.ssh
-	$(QUIET) if [ "$(enable_mhvtl)" = "yes" ]; then \
-	  $(CHMOD) 4750 $(STAGING_DIR)/usr/bin/vtltape; \
-	  $(CHMOD) 4750 $(STAGING_DIR)/usr/bin/vtllibrary; \
-	fi
 	$(QUIET) if [ "$(enable_login_tui)" = "no" ]; then \
 	  $(TOUCH) $(STAGING_DIR)/var/state/esos/no_login_tui; \
 	fi
@@ -5480,8 +5278,6 @@ image:
 	$(QUIET) $(ECHO) "### Archiving/compressing (sparse) image file..."
 	$(TAR) cfj $(tar_bz2_img_file) -C $(dir $(tar_bz2_img_file)) \
 	$(notdir $(img_file)) --sparse
-	cd $(dir $(tar_bz2_img_file)) && $(MD5SUM) -b \
-	$(notdir $(tar_bz2_img_file)) > $(BUILD_DIR)/dist_md5sum.txt
 	cd $(dir $(tar_bz2_img_file)) && $(SHA256SUM) -b \
 	$(notdir $(tar_bz2_img_file)) > $(BUILD_DIR)/dist_sha256sum.txt
 	$(QUIET) $(ECHO) && $(ECHO)

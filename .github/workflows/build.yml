@@ -1,0 +1,64 @@
+name: build
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  lint:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install shellcheck
+        run: sudo apt-get update && sudo apt-get install -y shellcheck
+      - name: ShellCheck
+        run: shellcheck -S warning install.sh esos2iso.sh pkg_update.sh scripts/*.sh
+      - name: Python 3 syntax check
+        run: python3 -m py_compile scripts/*.py
+
+  configure:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install host build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y autoconf build-essential wget cpio \
+            dosfstools e2fsprogs kpartx zip xz-utils git rsync squashfs-tools
+      - name: Regenerate configure (warnings are errors)
+        run: autoconf -Werror
+      - name: Configure
+        run: ./configure
+      - name: Check Makefile substitutions
+        run: |
+          if grep -nE '(^|[^@])@[a-z_0-9]+@($|[^@])' Makefile; then
+            echo "Unsubstituted autoconf variables in Makefile" >&2
+            exit 1
+          fi
+      - name: Dry-run early targets
+        run: |
+          make -n fetch > /dev/null
+          make -n pre_bootstrap > /dev/null
+
+  fetch:
+    needs: configure
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install host build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y autoconf build-essential wget cpio \
+            dosfstools e2fsprogs kpartx zip xz-utils git rsync squashfs-tools
+      - name: Cache distribution files
+        uses: actions/cache@v4
+        with:
+          path: work/dist_files
+          key: dist-files-${{ hashFiles('CHECKSUM.SHA256') }}
+          restore-keys: dist-files-
+      - name: Configure
+        run: autoconf && ./configure
+      - name: Fetch and verify (SHA-256) all distribution files
+        run: make -j4 fetch

@@ -2,10 +2,11 @@
 
 PKG_DIR="${PWD}"
 TEMP_DIR="${PKG_DIR}/temp"
-MNT_DIR="${TEMP_DIR}/mnt"
-LINUX_REQD_TOOLS="dd md5sum sha256sum grep egrep blockdev lsblk findfs tar"
-MACOSX_REQD_TOOLS="dd md5 shasum cat cut sed diff grep egrep diskutil tar"
-MD5_CHECKSUM="dist_md5sum.txt"
+# Referenced indirectly via ${!reqd_tools}
+# shellcheck disable=SC2034
+LINUX_REQD_TOOLS="dd sha256sum grep egrep blockdev lsblk findfs tar"
+# shellcheck disable=SC2034
+MACOSX_REQD_TOOLS="dd shasum cat grep egrep diskutil tar"
 SHA256_CHECKSUM="dist_sha256sum.txt"
 LINUX="LINUX"
 MACOSX="MACOSX"
@@ -52,17 +53,8 @@ echo
 # Checksums
 echo "### Verifying checksums..."
 if [ "${this_os}" = "${LINUX}" ]; then
-    md5sum -w -c ${MD5_CHECKSUM} || exit 1
     sha256sum -w -c ${SHA256_CHECKSUM} || exit 1
 elif [ "${this_os}" = "${MACOSX}" ]; then
-    chksum_img_file="$(cat ${MD5_CHECKSUM} | cut -d' ' -f2 | sed -e 's/\*//')"
-    if md5 -r ${chksum_img_file} | sed 's/ / */' | \
-        diff ${MD5_CHECKSUM} - > /dev/null 2>&1; then
-        echo "${chksum_img_file}: OK"
-    else
-        echo "${chksum_img_file}: The MD5 checksum doesn't match!"
-        exit 1
-    fi
     shasum -a 256 -c ${SHA256_CHECKSUM} || exit 1
 fi
 echo
@@ -429,8 +421,8 @@ if [ "${this_os}" = "${LINUX}" ]; then
     dev_bytes=$(expr ${dev_sectors} \* ${dev_sect_sz})
 elif [ "${this_os}" = "${MACOSX}" ]; then
     dev_bytes=$(diskutil info -plist ${dev_node} | \
-        grep -A1 "<key>TotalSize</key>" | grep -o '<integer>'.*'</integer>' | \
-        grep -o [^'<'integer'>'].*[^'<''/'integer'>']) || exit 1
+        grep -A1 "<key>TotalSize</key>" | grep -o '<integer>.*</integer>' | \
+        grep -o '[^<integer>].*[^</integer>]') || exit 1
 fi
 if [ ${dev_bytes} -lt 8589934592 ]; then
     echo "ERROR: Your target install drive isn't large enough;" \

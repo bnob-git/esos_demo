@@ -1,4 +1,4 @@
-#! /bin/sh
+#! /bin/bash
 
 # This script converts an ESOS boot drive (USB, physical disk, etc.) into a
 # RAID1 (mirror) boot drive. The single argument given to this tool is the

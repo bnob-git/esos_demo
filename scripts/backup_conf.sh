@@ -1,4 +1,4 @@
-#! /bin/sh
+#! /bin/bash
 
 # Use this script to create a full backup/archive of the entire ESOS
 # configuration that resides on the persistent boot media file system

@@ -1,4 +1,4 @@
-#! /bin/sh
+#! /bin/bash
 
 # Stop cluster services (if not already stopped) in the proper sequence. If
 # SBD is enabled, we attempt to stop that last.

@@ -1,4 +1,4 @@
-#! /bin/sh
+#! /bin/bash
 
 # Start cluster services (if not already started) in the proper sequence. If
 # SBD is enabled, we attempt to start that first.

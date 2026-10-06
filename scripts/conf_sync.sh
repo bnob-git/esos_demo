@@ -1,4 +1,4 @@
-#! /bin/sh
+#! /bin/bash
 
 # Try to acquire exclusive lock for up to 5 minutes (5 * 60 = 300 seconds)
 SYNC_LOCK="/var/lock/conf_sync"

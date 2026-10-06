@@ -1,4 +1,4 @@
-#! /bin/sh
+#! /bin/bash
 
 # This script will synchronize configuration files between the ESOS USB
 # device (esos_conf) and the root tmpfs filesystem using Git and rsync.
@@ -42,7 +42,7 @@ done
 # Mount, sync, and unmount
 if cat /proc/mounts | awk '{print $2}' | grep -q ${CONF_MNT}; then
     if ! grep -q esos_persist /proc/cmdline; then
-        logger -s -t $(basename ${0}) -p "local4.warn" \
+        logger -s -t "$(basename "${0}")" -p "local4.warn" \
             "It appears '${CONF_MNT}' is already mounted! Continuing anyway..."
     fi
 else
