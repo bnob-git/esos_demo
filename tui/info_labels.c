@@ -567,6 +567,8 @@ int readSessionData(char *label_msg[]) {
             if (read_io_kb[max_index] < read_io_kb[j])
                 max_index = j;
         }
+        if (max_index == i)
+            continue;
         /* Set temporary variable */
         strncpy(tmp_init_name, init_names[i], MAX_SYSFS_ATTR_SIZE);
         tmp_init_name[sizeof tmp_init_name - 1] = '\0';

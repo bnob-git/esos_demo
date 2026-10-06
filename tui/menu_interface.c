@@ -206,6 +206,13 @@ void supportArchDialog(CDKSCREEN *main_cdk_screen) {
         FREE_NULL(error_msg);
         return;
     }
+    if (strStrip(pkg_file_path)[0] == '\0') {
+        SAFE_ASPRINTF(&error_msg, "%s did not report an archive path!",
+                SUPPORT_TOOL);
+        errorDialog(main_cdk_screen, error_msg, NULL);
+        FREE_NULL(error_msg);
+        return;
+    }
 
     /* Set a message for the dialog */
     SAFE_ASPRINTF(&message[0], "<C></%d/B>ESOS Support Bundle",

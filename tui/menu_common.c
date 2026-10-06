@@ -1236,11 +1236,12 @@ char *getBlockDevChoice(CDKSCREEN *cdk_screen) {
                     FREE_NULL(error_msg);
                     break;
                 }
-                /* We only want the first sym link */
-                dev_node_ptr = strtok(sym_links, " ");
-                assert(dev_node_ptr != NULL);
+                /* We only want the first sym link; fall back to the
+                 * kernel name if udev has none */
+                dev_node_ptr = strtok(sym_links, " \n");
                 snprintf(ret_buff, MAX_SYSFS_PATH_SIZE, "%s",
-                        strStrip(dev_node_ptr));
+                        (dev_node_ptr != NULL) ?
+                        strStrip(dev_node_ptr) : block_dev);
 
             } else if ((strstr(block_dev, "/dev/dm-")) != NULL) {
                 /* A /dev/dm-* device, we're assuming its
