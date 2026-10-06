@@ -56,7 +56,8 @@ void readAttribute(char sysfs_attr[], char attr_value[]) {
                  "fopen(): %s", strerror(errno));
          return;
      } else {
-         fgets(attr_value, MAX_SYSFS_ATTR_SIZE, sysfs_file);
+         if (fgets(attr_value, MAX_SYSFS_ATTR_SIZE, sysfs_file) == NULL)
+             attr_value[0] = '\0';
          fclose(sysfs_file);
      }
 
@@ -227,7 +228,8 @@ boolean listSCSTTgtDrivers(char tgt_drivers[][MISC_STRING_LEN],
             if (strcmp(dir_entry->d_name, "copy_manager") == 0)
                 continue;
             if (i < MAX_SCST_DRIVERS) {
-                snprintf(tgt_drivers[i], MISC_STRING_LEN, dir_entry->d_name);
+                snprintf(tgt_drivers[i], MISC_STRING_LEN, "%s",
+                        dir_entry->d_name);
                 i++;
             }
         }
@@ -289,19 +291,25 @@ char *prettyFormatBytes(uint64_t size) {
     uint64_t multiplier = (1024ULL * 1024ULL * 1024ULL *
     1024ULL * 1024ULL * 1024ULL);
     int i = 0;
-    char *result = (char *) malloc(sizeof (char) * 20);
+    const size_t result_size = 20;
+    char *result = (char *) malloc(sizeof (char) * result_size);
+
+    if (result == NULL)
+        return NULL;
 
     for (i = 0; i < (int)(sizeof (sizes) / sizeof (*(sizes)));
             i++, multiplier /= 1024) {
         if (size < multiplier)
             continue;
         if ((size % multiplier) == 0)
-            sprintf(result, "%" PRIu64 " %s", size / multiplier, sizes[i]);
+            snprintf(result, result_size, "%" PRIu64 " %s",
+                    size / multiplier, sizes[i]);
         else
-            sprintf(result, "%.1f %s", (float) size / multiplier, sizes[i]);
+            snprintf(result, result_size, "%.1f %s",
+                    (float) size / multiplier, sizes[i]);
         return result;
     }
-    strcpy(result, "0");
+    snprintf(result, result_size, "0");
     return result;
 }
 
@@ -388,18 +396,18 @@ char *prettyShrinkStr(size_t max_len, char *string) {
     /* Maybe it is already an acceptable length */
     curr_size = strlen(string);
     if (curr_size <= max_len) {
-        strncpy(ret_buff, string, MAX_SYSFS_ATTR_SIZE);
+        snprintf(ret_buff, MAX_SYSFS_ATTR_SIZE, "%s", string);
         return ret_buff;
 
     } else {
         /* Guess not, so lets shrink it */
-        strncpy(ret_buff, string, MAX_SYSFS_ATTR_SIZE);
+        snprintf(ret_buff, MAX_SYSFS_ATTR_SIZE, "%s", string);
         char_to_del = curr_size - max_len + 3;
         left_len = right_len = (curr_size - char_to_del) / 2;
         while ((left_len + char_to_del + right_len) < max_len)
             ++right_len;
         right_half = ret_buff + left_len + char_to_del;
-        strncpy(str_buff, right_half, MISC_STRING_LEN);
+        snprintf(str_buff, MISC_STRING_LEN, "%s", right_half);
         curr_pos = ret_buff + left_len;
         *curr_pos = '.';
         ++curr_pos;
@@ -466,7 +474,7 @@ int getUsableBlockDevs(CDKSCREEN *cdk_screen,
                 snprintf(dev_node_test, MISC_STRING_LEN,
                         "/dev/%s", dir_entry->d_name);
                 /* Update string to handle the "cciss!cXdY" case */
-                for (i = 0; i <= strlen(dev_node_test); i++) {
+                for (i = 0; i <= (int) strlen(dev_node_test); i++) {
                     if (dev_node_test[i] == '!')
                         dev_node_test[i] = '/';
                 }
@@ -584,7 +592,7 @@ int getUsableBlockDevs(CDKSCREEN *cdk_screen,
                     if (dev_cnt < MAX_BLOCK_DEVS) {
                         snprintf(blk_dev_name[dev_cnt], MISC_STRING_LEN, "%s",
                                 dir_entry->d_name);
-                        for (i = 0; i <= strlen(blk_dev_name[dev_cnt]); i++) {
+                        for (i = 0; i <= (int) strlen(blk_dev_name[dev_cnt]); i++) {
                             if (blk_dev_name[dev_cnt][i] == '!')
                                 blk_dev_name[dev_cnt][i] = '/';
                         }
@@ -716,12 +724,12 @@ char *rcSvcStatus(char rc_svc_name[]) {
     ret_val = system(command_str);
     exit_stat = WEXITSTATUS(ret_val);
     if (exit_stat == 0) {
-        strncpy(ret_buff, "Running", MISC_STRING_LEN);
+        snprintf(ret_buff, MISC_STRING_LEN, "Running");
     } else if (exit_stat == 1) {
-        strncpy(ret_buff, "Stopped", MISC_STRING_LEN);
+        snprintf(ret_buff, MISC_STRING_LEN, "Stopped");
     } else {
         SAFE_ASPRINTF(&error_msg, "The script exited with %d!", exit_stat);
-        strncpy(ret_buff, error_msg, MISC_STRING_LEN);
+        snprintf(ret_buff, MISC_STRING_LEN, "%s", error_msg);
         FREE_NULL(error_msg);
     }
 

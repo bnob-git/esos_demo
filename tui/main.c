@@ -473,7 +473,8 @@ start:
 
     /* Create the top menu */
     menu_1_cnt = 5;
-    menu_1 = newCDKMenu(cdk_screen, menu_list_1, menu_1_cnt, submenu_size_1,
+    menu_1 = newCDKMenu(cdk_screen, (const char *(*)[MAX_SUB_ITEMS]) menu_list_1,
+            menu_1_cnt, submenu_size_1,
             menu_loc_1, 0, A_NORMAL, g_color_menu_text[g_curr_theme]);
     if (!menu_1) {
         errorDialog(cdk_screen, MENU_ERR_MSG, NULL);
@@ -483,7 +484,8 @@ start:
 
     /* Create the bottom menu */
     menu_2_cnt = 5;
-    menu_2 = newCDKMenu(cdk_screen, menu_list_2, menu_2_cnt, submenu_size_2,
+    menu_2 = newCDKMenu(cdk_screen, (const char *(*)[MAX_SUB_ITEMS]) menu_list_2,
+            menu_2_cnt, submenu_size_2,
             menu_loc_2, 1, A_NORMAL, g_color_menu_text[g_curr_theme]);
     if (!menu_2) {
         errorDialog(cdk_screen, MENU_ERR_MSG, NULL);
@@ -523,7 +525,8 @@ refreshCDKScreen(cdk_screen);
                 endwin();
                 curs_set(1);
                 echo();
-                system(CLEAR_BIN);
+                if (system(CLEAR_BIN) == -1)
+                    syslog(LOG_ERR, "system(): %s", strerror(errno));
                 /* Execute the shell; if we fail, print something
                  * useful to syslog for debugging */
                 if ((execl(SHELL_BIN, SHELL_BIN, "--rcfile", GLOBAL_BASHRC,
@@ -1031,7 +1034,8 @@ refreshCDKScreen(cdk_screen);
                     endwin();
                     curs_set(1);
                     echo();
-                    system(CLEAR_BIN);
+                    if (system(CLEAR_BIN) == -1)
+                        syslog(LOG_ERR, "system(): %s", strerror(errno));
                     /* Execute the shell; if we fail, print something
                      * useful to syslog for debugging */
                     if ((execl(SHELL_BIN, SHELL_BIN, "--rcfile", GLOBAL_BASHRC,
@@ -1134,7 +1138,8 @@ quit:
         FREE_NULL(sess_label_msg[i]);
     }
 #endif
-    system(CLEAR_BIN);
+    if (system(CLEAR_BIN) == -1)
+        syslog(LOG_ERR, "system(): %s", strerror(errno));
     exit(EXIT_SUCCESS);
 }
 
@@ -1286,15 +1291,15 @@ void statusBar(WINDOW *window) {
     /* Set the ESOS status bar name/version */
     snprintf(long_ver_str, MISC_STRING_LEN,
             "%s %s", PRODUCT_NAME, ESOS_VERSION);
-    snprintf(esos_ver_str, STAT_BAR_ESOS_VER_MAX,
+    snprintf(esos_ver_str, STAT_BAR_ESOS_VER_MAX, "%s",
             prettyShrinkStr((STAT_BAR_ESOS_VER_MAX - 1), long_ver_str));
     esos_ver_size = strlen(esos_ver_str);
 
     /* Get username */
     getresuid(&ruid, &euid, &suid);
     pwd = getpwuid(suid);
-    strncpy(username_str, pwd->pw_name, STAT_BAR_UNAME_MAX);
-    username_str[sizeof username_str - 1] = '\0';
+    snprintf(username_str, sizeof username_str, "%s",
+            (pwd != NULL) ? pwd->pw_name : "unknown");
     username_size = strlen(username_str);
 
     /* Figure out spacing for status bar */

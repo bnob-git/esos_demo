@@ -184,9 +184,14 @@ void supportArchDialog(CDKSCREEN *main_cdk_screen) {
 
     /* Archive the configuration files and logs */
     SAFE_ASPRINTF(&cmd_str, "%s 2>&1", SUPPORT_TOOL);
-    support_cmd = popen(cmd_str, "r");
-    fgets(pkg_file_path, sizeof (pkg_file_path), support_cmd);
-    if ((exit_stat = pclose(support_cmd)) == -1) {
+    if ((support_cmd = popen(cmd_str, "r")) == NULL) {
+        exit_stat = -1;
+    } else {
+        if (fgets(pkg_file_path, sizeof (pkg_file_path), support_cmd) == NULL)
+            pkg_file_path[0] = '\0';
+        exit_stat = pclose(support_cmd);
+    }
+    if (exit_stat == -1) {
         ret_val = -1;
     } else {
         if (WIFEXITED(exit_stat))
