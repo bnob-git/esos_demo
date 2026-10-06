@@ -7,7 +7,7 @@ COROSYNC_QDEVICE="/usr/sbin/corosync-qdevice"
 QDEVICE_PID_FILE="/var/run/corosync-qdevice/corosync-qdevice.pid"
 QDEVICE_LOCK="/var/lock/qdevice"
 
-check_args ${@}
+check_args "${@}"
 
 # Load configuration (and export all variables)
 if [ -f "${QDEVICE_CONFIG}" ]; then

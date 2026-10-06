@@ -11,7 +11,7 @@ SBD_STARTS_SEC="1800"
 SBD_MAX_STARTS="3"
 RC_SBD_LOGGER="/usr/bin/logger -t rc.sbd -p daemon.info"
 
-check_args ${@}
+check_args "${@}"
 
 # Make sure the SBD configuration file exists
 if [ ! -f "${SBD_CONFIG}" ]; then

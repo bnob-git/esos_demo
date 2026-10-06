@@ -14,14 +14,14 @@ INITIAL_SYNC=0
 ROOT_PATH="/"
 
 # Make sure we always unmount (or try to)
-function unmount_fs {
+unmount_fs() {
     umount ${CONF_MNT} || exit 1
 }
 if ! grep -q esos_persist /proc/cmdline; then
     trap unmount_fs EXIT
 fi
 
-function initial_rsync {
+initial_rsync() {
     # Use rsync for the other directories/files
     mkdir -p ${USB_RSYNC} || exit 1
     rsync --archive --update --exclude "System Volume Information" \

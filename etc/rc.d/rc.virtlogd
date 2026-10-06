@@ -6,7 +6,7 @@ VIRTLOGD="/usr/sbin/virtlogd"
 VIRTLOGD_LOCK="/var/lock/virtlogd"
 DFLT_OPTS="-d"
 
-check_args ${@}
+check_args "${@}"
 
 SCRIPT="$(/usr/bin/basename ${0})"
 if check_opts_set ${SCRIPT}; then

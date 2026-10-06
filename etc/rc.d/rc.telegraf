@@ -6,7 +6,7 @@ TELEGRAF="/usr/bin/telegraf"
 TELEGRAF_LOCK="/var/lock/telegraf"
 DFLT_OPTS="> /var/log/telegraf.log 2>&1 &"
 
-check_args ${@}
+check_args "${@}"
 
 SCRIPT="$(/usr/bin/basename ${0})"
 if check_opts_set ${SCRIPT}; then

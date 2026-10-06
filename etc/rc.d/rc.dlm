@@ -6,7 +6,7 @@ DLM_CONTROLD="/usr/sbin/dlm_controld"
 DLM_CONTROLD_LOCK="/var/lock/dlm_controld"
 DFLT_OPTS=""
 
-check_args ${@}
+check_args "${@}"
 
 SCRIPT="$(/usr/bin/basename ${0})"
 if check_opts_set ${SCRIPT}; then

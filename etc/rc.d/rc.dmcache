@@ -5,7 +5,7 @@ source /etc/rc.d/common
 DMCACHE_START="/etc/dm-cache.start"
 DMCACHE_STOP="/etc/dm-cache.stop"
 
-check_args ${@}
+check_args "${@}"
 
 start() {
     # If our dm-cache.start file exists, run it

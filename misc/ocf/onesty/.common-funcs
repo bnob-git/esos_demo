@@ -52,7 +52,7 @@ c_expand_nodes() {
   do
     nodeid=$(${HA_SBIN_DIR}/crm_node -l | grep $node | awk '{print $1}')
     nodes[$nodeid]=$node
-    conftargetports="$(${HA_SBIN_DIR}/crm_attribute --node $node --name targetports --query | egrep -o 'value=[^ ]+' | egrep -o '[^=]+$' | tr '[:upper:]' '[:lower:]' | tr ',' ' ' 2>/dev/null)"
+    conftargetports="$(${HA_SBIN_DIR}/crm_attribute --node $node --name targetports --query | grep -E -o 'value=[^ ]+' | grep -E -o '[^=]+$' | tr '[:upper:]' '[:lower:]' | tr ',' ' ' 2>/dev/null)"
     unset targetports[$nodeid]
     for port in $conftargetports
     do

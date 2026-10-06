@@ -32,7 +32,7 @@ USAGE="usage: $0 {start|stop|status|monitor|validate-all|meta-data}";
 
 debug_log () {
     if [ $DEBUG -eq 1 ]; then
-        echo "`date`:${OCF_RESKEY_pool}:" $@ >> "$DEBUGLOG"
+        echo "$(date):${OCF_RESKEY_pool}:" "$*" >> "$DEBUGLOG"
     fi
 }
 
@@ -97,7 +97,7 @@ zpool_import () {
         #        the CRM to explicitly control imports of this pool.
         if zpool import -f $OCF_RESKEY_importargs -o cachefile=none "$OCF_RESKEY_pool" ; then
             for i in $(zfs list -H -t volume -o name |
-                egrep "^$OCF_RESKEY_pool/"); do
+                grep -E "^$OCF_RESKEY_pool/"); do
                 # Wait for zvol creation in /dev
                 while [ ! -e "/dev/$i" ]; do
                     debug_log "waiting for zvol $i to appear..."

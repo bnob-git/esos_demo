@@ -6,7 +6,7 @@ VMTOOLSD="/usr/bin/vmtoolsd"
 VMTOOLSD_LOCK="/var/lock/vmtoolsd"
 DFLT_OPTS="-b /var/run/vmtoolsd.pid"
 
-check_args ${@}
+check_args "${@}"
 
 SCRIPT="$(/usr/bin/basename ${0})"
 if check_opts_set ${SCRIPT}; then

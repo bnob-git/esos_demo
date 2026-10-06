@@ -13,7 +13,7 @@ RPC_MOUNTD_LOCK="/var/lock/rpc.mountd"
 EXPORTFS="/usr/sbin/exportfs"
 DFLT_OPTS="-p 2049 8"
 
-check_args ${@}
+check_args "${@}"
 
 SCRIPT="$(/usr/bin/basename ${0})"
 if check_opts_set ${SCRIPT}; then

@@ -8,7 +8,7 @@ VGCHANGE="/usr/sbin/vgchange"
 LVMLOCKCTL="/usr/sbin/lvmlockctl"
 DFLT_OPTS="-f"
 
-check_args ${@}
+check_args "${@}"
 
 SCRIPT="$(/usr/bin/basename ${0})"
 if check_opts_set ${SCRIPT}; then

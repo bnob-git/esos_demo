@@ -6,7 +6,7 @@ RASDAEMON="/usr/sbin/rasdaemon"
 RASDAEMON_LOCK="/var/lock/rasdaemon"
 DFLT_OPTS="-r"
 
-check_args ${@}
+check_args "${@}"
 
 SCRIPT="$(/usr/bin/basename ${0})"
 if check_opts_set ${SCRIPT}; then

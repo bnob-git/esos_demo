@@ -532,7 +532,7 @@ load_scst_modules() {
     # The core SCST modules first
     for i in ${SCST_MODS}; do
         ocf_log debug "scst_start() -> Module: ${i}"
-        if [ -d /sys/module/${i} ]; then
+        if [ -d /sys/module/"${i}" ]; then
             ocf_log warn "The ${i} module is already loaded!"
         else
             ocf_run modprobe ${i}
@@ -547,7 +547,7 @@ load_scst_modules() {
     # The optional driver modules next (don't check exit status)
     for i in ${OPTL_MODS}; do
         ocf_log debug "scst_start() -> Module: ${i}"
-        if [ -d /sys/module/${i} ]; then
+        if [ -d /sys/module/"${i}" ]; then
             ocf_log warn "The ${i} module is already loaded!"
         else
             ocf_run modprobe -s ${i}
@@ -562,7 +562,7 @@ unload_scst_modules() {
     # The optional driver modules first (don't check exit status)
     for i in $(echo ${OPTL_MODS} | tr ' ' '\n' | tac | tr '\n' ' '); do
         ocf_log debug "scst_stop() -> Module: ${i}"
-        if [ -d /sys/module/${i} ]; then
+        if [ -d /sys/module/"${i}" ]; then
             ocf_run rmmod -w ${i}
         else
             ocf_log warn "The ${i} module is not loaded!"
@@ -571,7 +571,7 @@ unload_scst_modules() {
     # The core SCST modules next
     for i in $(echo ${SCST_MODS} | tr ' ' '\n' | tac | tr '\n' ' '); do
         ocf_log debug "scst_stop() -> Module: ${i}"
-        if [ -d /sys/module/${i} ]; then
+        if [ -d /sys/module/"${i}" ]; then
             ocf_run rmmod -w ${i}
             rc=${?}
             if [ ${rc} -ne 0 ]; then
@@ -808,7 +808,7 @@ scst_promote() {
     # After the resource has been promoted, check whether the promotion worked
     while true; do
         scst_monitor
-        if [ ${?} -eq ${OCF_RUNNING_MASTER} ]; then
+        if [ ${?} -eq "${OCF_RUNNING_MASTER}" ]; then
             ocf_log info "Resource was promoted successfully."
             break
         else
@@ -931,7 +931,7 @@ scst_demote() {
     # After the resource has been demoted, check whether the demotion worked
     while true; do
         scst_monitor
-        if [ ${?} -eq ${OCF_RUNNING_MASTER} ]; then
+        if [ ${?} -eq "${OCF_RUNNING_MASTER}" ]; then
             ocf_log debug "scst_demote() -> Resource still" \
                 "awaiting demotion."
             sleep 1

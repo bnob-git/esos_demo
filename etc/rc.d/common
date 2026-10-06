@@ -1,3 +1,6 @@
+# shellcheck shell=bash
+# Sourced by the rc.* scripts (/bin/sh is bash on ESOS).
+
 RC_D_PREFIX="/etc/rc.d"
 STOP_TIMEOUT=600
 
@@ -18,7 +21,7 @@ UNKNOWN=2
 
 # Check if the service is enabled, or not
 check_enabled() {
-    rc_conf_line="$(/bin/egrep ^${1}_enable /etc/rc.conf)"
+    rc_conf_line="$(/bin/grep -E ^${1}_enable /etc/rc.conf)"
     if [ ${?} -eq 0 ]; then
         on_off="$(/bin/echo ${rc_conf_line} | /usr/bin/cut -d= -f2 | \
         /usr/bin/tr -d ' ')"
@@ -97,7 +100,7 @@ check_args() {
 
 # Check if optional parameter variable is set
 check_opts_set() {
-    /bin/egrep ^${1}_opts /etc/rc.conf > /dev/null 2>&1
+    /bin/grep -E ^${1}_opts /etc/rc.conf > /dev/null 2>&1
     if [ ${?} -eq 0 ]; then
         return 0
     else
@@ -107,7 +110,7 @@ check_opts_set() {
 
 # Get the value of the optional parameter variable
 get_rc_opts() {
-    rc_conf_line="$(/bin/egrep ^${1}_opts /etc/rc.conf)"
+    rc_conf_line="$(/bin/grep -E ^${1}_opts /etc/rc.conf)"
     if [ ${?} -eq 0 ]; then
         opts_val="$(/bin/echo ${rc_conf_line} | /usr/bin/cut -d= -f2 | \
         /usr/bin/tr -d '\"')"
@@ -121,8 +124,8 @@ get_rc_opts() {
 
 # Most of this came from /etc/rc.d/rc.sysinit in RHEL 5.11
 key_is_random() {
-    [ "$1" = "/dev/urandom" -o "$1" = "/dev/hw_random" \
-        -o "$1" = "/dev/random" ]
+    [ "$1" = "/dev/urandom" ] || [ "$1" = "/dev/hw_random" ] || \
+        [ "$1" = "/dev/random" ]
 }
 init_crypto() {
     local have_random dst src key opt mode owner params makeswap skip arg opt
@@ -131,12 +134,12 @@ init_crypto() {
     ret=0
     have_random=${1}
     while read dst src key opt; do
-        [ -z "${dst}" -o "${dst#\#}" != "${dst}" ] && continue
+        { [ -z "${dst}" ] || [ "${dst#\#}" != "${dst}" ]; } && continue
         [ -b "/dev/mapper/${dst}" ] && continue;
         if [ "${have_random}" = 0 ] && key_is_random "${key}"; then
             continue
         fi
-        if [ -n "${key}" -a "x${key}" != "xnone" -a "x${key}" != "x-" ]; then
+        if [ -n "${key}" ] && [ "x${key}" != "xnone" ] && [ "x${key}" != "x-" ]; then
             if /usr/bin/test -e "${key}" ; then
                 owner=$(/bin/ls -l ${key} | (read a b owner rest; \
                     /bin/echo ${owner}))

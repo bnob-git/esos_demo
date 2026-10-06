@@ -3,8 +3,8 @@
 PKG_DIR="${PWD}"
 TEMP_DIR="${PKG_DIR}/temp"
 MNT_DIR="${TEMP_DIR}/mnt"
-LINUX_REQD_TOOLS="dd md5sum sha256sum grep egrep blockdev lsblk findfs tar"
-MACOSX_REQD_TOOLS="dd md5 shasum cat cut sed diff grep egrep diskutil tar"
+LINUX_REQD_TOOLS="dd md5sum sha256sum grep blockdev lsblk findfs tar"
+MACOSX_REQD_TOOLS="dd md5 shasum cat cut sed diff grep diskutil tar"
 MD5_CHECKSUM="dist_md5sum.txt"
 SHA256_CHECKSUM="dist_sha256sum.txt"
 LINUX="LINUX"
@@ -16,7 +16,7 @@ WIPE_TRAN_TYPES="sata|sas|nvme"
 install_dev="${1}"
 # Optional installation device transport type parameter
 install_tran="${2}"
-# Optional installation device model string parameter (can be an egrep pattern)
+# Optional installation device model string parameter (can be a grep -E pattern)
 install_model="${3}"
 
 echo "*** $(cat VERSION) Install Script ***" && echo
@@ -136,9 +136,9 @@ if test -f "/etc/esos-release" && test -z "${install_dev}" && \
                 image_parts="$(mktemp -u -t image_parts.XXXXXX)" || exit 1
                 dd if=${extracted_img} of=${image_mbr} bs=512 count=1 > \
                     /dev/null 2>&1 || exit 1
-                fdisk -u -l ${esos_blk_dev} | egrep "^${esos_blk_dev}" | \
+                fdisk -u -l ${esos_blk_dev} | grep -E "^${esos_blk_dev}" | \
                     sed -e 's/\*//' | awk '{ print $2 }' > ${disk_parts}
-                fdisk -u -l ${image_mbr} | egrep "^${image_mbr}" | \
+                fdisk -u -l ${image_mbr} | grep -E "^${image_mbr}" | \
                     sed -e 's/\*//' | awk '{ print $2 }' > ${image_parts}
                 if ! diff ${disk_parts} ${image_parts} > /dev/null 2>&1; then
                     echo "### The image file and current ESOS disk labels" \
@@ -306,7 +306,7 @@ fi
 # For new installs directly on ESOS, we may want to wipe all devices first
 if [ -f "/etc/esos-release" ] && [ "x${WIPE_DEVS}" = "x1" ]; then
     while : ; do
-        if [ -n "${NO_PROMPT}" ] && [ ${NO_PROMPT} -eq 1 ]; then
+        if [ -n "${NO_PROMPT}" ] && [ "${NO_PROMPT}" -eq 1 ]; then
             # Don't get confirmation, print a warning and continue
             confirm="Y"
             echo "NO_PROMPT=1 is set, continuing..."
@@ -414,7 +414,7 @@ else
         fi
     done
 fi
-if [ "x${dev_node}" = "x" ] || [ ! -e ${dev_node} ]; then
+if [ "x${dev_node}" = "x" ] || [ ! -e "${dev_node}" ]; then
     echo "ERROR: That device node doesn't seem to exist." 1>&2
     exit 1
 fi
@@ -429,10 +429,10 @@ if [ "${this_os}" = "${LINUX}" ]; then
     dev_bytes=$(expr ${dev_sectors} \* ${dev_sect_sz})
 elif [ "${this_os}" = "${MACOSX}" ]; then
     dev_bytes=$(diskutil info -plist ${dev_node} | \
-        grep -A1 "<key>TotalSize</key>" | grep -o '<integer>'.*'</integer>' | \
-        grep -o [^'<'integer'>'].*[^'<''/'integer'>']) || exit 1
+        grep -A1 "<key>TotalSize</key>" | grep -o '<integer>.*</integer>' | \
+        grep -o '[^<integer>].*[^</integer>]') || exit 1
 fi
-if [ ${dev_bytes} -lt 8589934592 ]; then
+if [ "${dev_bytes}" -lt 8589934592 ]; then
     echo "ERROR: Your target install drive isn't large enough;" \
         "it must be at least 8192 MiB." 1>&2
     exit 1
@@ -448,7 +448,7 @@ fi
 
 # Get a final confirmation before writing the image
 while : ; do
-    if [ -n "${NO_PROMPT}" ] && [ ${NO_PROMPT} -eq 1 ]; then
+    if [ -n "${NO_PROMPT}" ] && [ "${NO_PROMPT}" -eq 1 ]; then
         # Don't get confirmation, print a warning and continue
         confirm="Y"
         echo "NO_PROMPT=1 is set, continuing..."
@@ -463,7 +463,7 @@ while : ; do
             "take a while..."
         tar xfOj ${image_file} | dd of=${real_dev_node} bs=1${suffix} || \
             exit 1
-        if [ ${PIPESTATUS[0]} -ne 0 ]; then
+        if [ "${PIPESTATUS[0]}" -ne 0 ]; then
             exit 1
         fi
         if [ "${this_os}" = "${LINUX}" ]; then
@@ -516,9 +516,9 @@ while : ; do
                 new_data_part_dev="${dev_node}6"
             fi
             free_end="$(parted -m -s ${dev_node} unit s print free | \
-                egrep ':free;$' | tail -n+2 | cut -d: -f3 | tr -d 's')"
+                grep -E ':free;$' | tail -n+2 | cut -d: -f3 | tr -d 's')"
             orig_start="$(parted -m -s ${dev_node} unit s print | \
-                egrep '^4:' | cut -d: -f2 | tr -d 's')"
+                grep -E '^4:' | cut -d: -f2 | tr -d 's')"
             # Zap the original 'esos_logs' file system
             if ! wipefs --all "${old_logs_part_dev}"; then
                 sleep 5

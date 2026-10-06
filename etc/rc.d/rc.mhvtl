@@ -5,7 +5,7 @@ source /etc/rc.d/common
 VTL_USER="vtl"
 MHVTL_CONFIG_PATH="/etc/mhvtl"
 
-check_args ${@}
+check_args "${@}"
 
 start() {
     /bin/echo "Starting mhVTL services..."

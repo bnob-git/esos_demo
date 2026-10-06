@@ -31,7 +31,7 @@ if [ -f "/lib/modules/$(/bin/uname -r)/extra/chfcoe.ko" ]; then
     OPTL_MODS="${OPTL_MODS} chfcoe"
 fi
 
-check_args ${@}
+check_args "${@}"
 
 load_kern_mods() {
     /bin/echo "Loading SCST kernel modules..."
@@ -51,7 +51,7 @@ unload_kern_mods() {
     # Unload the optional driver modules first (don't check exit status)
     for i in $(/bin/echo ${OPTL_MODS} | /usr/bin/tr ' ' '\n' | \
         /usr/bin/tac | /usr/bin/tr '\n' ' '); do
-        if [ -d /sys/module/${i} ]; then
+        if [ -d /sys/module/"${i}" ]; then
             /sbin/rmmod -w ${i}
         fi
     done

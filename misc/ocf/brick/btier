@@ -1,4 +1,4 @@
-# !/bin/bash
+#!/bin/bash
 
 #
 # 	BTIER OCF RA. Exports and manages iSCSI SCST targets.
@@ -79,7 +79,7 @@ btier_meta_data() {
 
 l_load_module () {
 	n=`lsmod | grep -c "^$1 "`
-	if [ $n -gt 0 ];
+	if [ "$n" -gt 0 ];
 	then
 		return 0
 	else
@@ -89,7 +89,7 @@ l_load_module () {
 }
 
 get_tier_dev (){
-	if [ -e $LOCKFILE ]; then
+	if [ -e "$LOCKFILE" ]; then
 		TIER_DEV=$(cat $LOCKFILE)
 	else
 		TIER_DEV="XXXNONEX"
@@ -106,7 +106,7 @@ set_tier_dev (){
 	done
 	if [ "${OCF_RESKEY_device_name}" != "" ]; then
 		#TODO: Check if device already exists. If yes resource MUST be stopped
-		if [ -e /dev/${OCF_RESKEY_device_name} ]; then 			
+		if [ -e /dev/"${OCF_RESKEY_device_name}" ]; then 			
 			ocf_log warn "Device ${OCF_RESKEY_device_name} already exists"
 			rc=1
 		else
@@ -129,7 +129,7 @@ END
 btier_start() {
     btier_monitor
 
-    if [ $? =  $OCF_SUCCESS ]; then
+    if [ $? =  "$OCF_SUCCESS" ]; then
 	return $OCF_SUCCESS
     fi
 
@@ -159,7 +159,7 @@ btier_start() {
 btier_stop() {
     btier_monitor
 
-    if [ $? =  $OCF_SUCCESS ]; then
+    if [ $? =  "$OCF_SUCCESS" ]; then
 	ocf_log info "stopping tier device ${TIER_DEV}"
 	btier_setup -d /dev/${TIER_DEV}
 	if [ $? -eq 0 ]; then

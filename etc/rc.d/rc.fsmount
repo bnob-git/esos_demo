@@ -4,7 +4,7 @@ source /etc/rc.d/common
 
 FSTAB="/etc/fstab"
 
-check_args ${@}
+check_args "${@}"
 
 start() {
     # Check file systems for any possible errors

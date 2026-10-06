@@ -10,7 +10,7 @@ UPSMON_LOCK="/var/lock/upsmon"
 UPSDRVCTL_LOCK="/var/lock/upsdrvctl"
 NUT_USER="nutmon"
 
-check_args ${@}
+check_args "${@}"
 
 start() {
     /bin/echo "Starting NUT UPS drivers..."

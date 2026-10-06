@@ -7,7 +7,7 @@ MUNIN_NODE="/usr/sbin/munin-node-c"
 MUNIN_LOCK="/var/lock/munin"
 DFLT_OPTS="0.0.0.0:4949"
 
-check_args ${@}
+check_args "${@}"
 
 SCRIPT="$(/usr/bin/basename ${0})"
 if check_opts_set ${SCRIPT}; then
