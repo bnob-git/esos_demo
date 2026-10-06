@@ -5,7 +5,7 @@ source /etc/rc.d/common
 INITTAB="/etc/inittab"
 SETSERIAL="/bin/setserial"
 
-check_args ${@}
+check_args "${@}"
 
 start() {
     local ports update

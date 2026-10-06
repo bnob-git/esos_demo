@@ -5,7 +5,7 @@ source /etc/rc.d/common
 MDADM="/sbin/mdadm"
 DFLT_OPTS="--assemble --scan"
 
-check_args ${@}
+check_args "${@}"
 
 SCRIPT="$(/usr/bin/basename ${0})"
 if check_opts_set ${SCRIPT}; then

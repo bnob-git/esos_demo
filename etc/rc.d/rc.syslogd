@@ -6,7 +6,7 @@ SYSLOGD="/usr/sbin/syslogd"
 SYSLOGD_LOCK="/var/lock/syslogd"
 DFLT_OPTS=""
 
-check_args ${@}
+check_args "${@}"
 
 SCRIPT="$(/usr/bin/basename ${0})"
 if check_opts_set ${SCRIPT}; then

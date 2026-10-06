@@ -5,7 +5,7 @@ source /etc/rc.d/common
 ZPOOL="/usr/sbin/zpool"
 ZPOOL_CACHE="/etc/zfs/zpool.cache"
 
-check_args ${@}
+check_args "${@}"
 
 if [ -f "/lib/modules/$(/bin/uname -r)/extra/zfs/zfs.ko" ]; then
     # Make sure the ZFS module is loaded, otherwise nothing to do

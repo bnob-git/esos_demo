@@ -6,7 +6,7 @@ DMSETUP="/usr/sbin/dmsetup"
 VGSCAN="/usr/sbin/vgscan"
 VGCHANGE="/usr/sbin/vgchange"
 
-check_args ${@}
+check_args "${@}"
 
 start() {
     # Setup LVM

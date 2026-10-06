@@ -18,7 +18,7 @@ fi
 
 # Systems with lots of CPUs need nr_cpus > 1 in the capture kernel
 avail_cpus="$(/usr/bin/nproc --all)"
-if [ ${avail_cpus} -ge 64 ]; then
+if [ "${avail_cpus}" -ge 64 ]; then
     nr_cpus="16"
 else
     nr_cpus="1"

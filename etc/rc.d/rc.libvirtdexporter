@@ -7,7 +7,7 @@ LIBVIRTD_EXPORTER_LOCK="/var/lock/libvirtd_exporter"
 DFLT_OPTS="> /var/log/libvirtd_exporter.log 2>&1 &"
 PWATCHER="/usr/local/sbin/pwatcher.sh"
 
-check_args ${@}
+check_args "${@}"
 
 SCRIPT="$(/usr/bin/basename ${0})"
 if check_opts_set ${SCRIPT}; then

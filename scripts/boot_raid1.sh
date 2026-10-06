@@ -62,7 +62,7 @@ esos_blk_dev="$(echo ${esos_root} | \
 # Confirm the additonal block device is a suitable size
 esos_dev_size="$(blockdev --getsize64 ${esos_blk_dev})"
 addtl_dev_size="$(blockdev --getsize64 ${addtl_blk_dev})"
-if [ ! ${addtl_dev_size} -ge ${esos_dev_size} ]; then
+if [ ! "${addtl_dev_size}" -ge "${esos_dev_size}" ]; then
     echo "Current ESOS boot device size: ${esos_dev_size}"
     echo "Additional block device size: ${addtl_dev_size}"
     echo "The new/additional block device size must be greater" \
@@ -70,7 +70,7 @@ if [ ! ${addtl_dev_size} -ge ${esos_dev_size} ]; then
     exit 1
 fi
 
-if [ -n "${NO_PROMPT}" ] && [ ${NO_PROMPT} -eq 1 ]; then
+if [ -n "${NO_PROMPT}" ] && [ "${NO_PROMPT}" -eq 1 ]; then
     # Don't get confirmation, print a warning and continue
     echo "NO_PROMPT=1 is set, continuing..."
 else

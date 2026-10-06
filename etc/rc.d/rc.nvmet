@@ -5,7 +5,7 @@ source /etc/rc.d/common
 NVMETCLI="/usr/sbin/nvmetcli"
 NVMET_CONF_FILE="/etc/nvmet/config.json"
 
-check_args ${@}
+check_args "${@}"
 
 start() {
     # Make sure the saved configuration exists

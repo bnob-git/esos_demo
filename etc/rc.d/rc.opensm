@@ -6,7 +6,7 @@ OPENSM="/usr/sbin/opensm"
 OPENSM_LOCK="/var/lock/opensm"
 DFLT_OPTS="--daemon > /dev/null 2>&1"
 
-check_args ${@}
+check_args "${@}"
 
 SCRIPT="$(/usr/bin/basename ${0})"
 if check_opts_set ${SCRIPT}; then

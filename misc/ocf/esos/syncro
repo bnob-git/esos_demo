@@ -165,7 +165,7 @@ get_syncro_devs() {
             blk_dev_name="$(basename ${blk_dev_path})"
             ocf_log debug "Found a block device: ${blk_dev_name}"
             # For now, lets only look at SCSI disks
-            if [[ ${blk_dev_name}" =~ "^sd[a-z].* ]]; then
+            if [[ "${blk_dev_name}" =~ ^sd[a-z] ]]; then
                 blk_dev_sysfs="${BLOCK_SYSFS}/${blk_dev_name}"
                 sd_model="$(head -1 ${blk_dev_sysfs}/device/model)"
                 ocf_log debug "SCSI disk model: ${sd_model}"
@@ -199,8 +199,8 @@ get_ctrlr_id() {
             return ${j}
         fi
     done
-    # If we got this far, we didn't find it
-    return -1
+    # If we got this far, we didn't find it (255 == not found)
+    return 255
 }
 
 
@@ -214,7 +214,7 @@ is_vd_owned() {
     desc_line=$(echo "${show_vd_output}" | grep "Description = " | \
         cut -d= -f2 | tr -d ' ')
     ocf_log debug "StorCLI description line: ${desc_line}"
-    if [ "x${stat_line}" != "xSuccess" -a "x${desc_line}" = "xNone" ]; then
+    if [ "x${stat_line}" != "xSuccess" ] && [ "x${desc_line}" = "xNone" ]; then
         # Not currently the owner
         return 1
     else
@@ -237,7 +237,7 @@ own_syncro_vds() {
             get_ctrlr_id ${host}
             ctrlr_id=${?}
             ocf_log debug "Controller ID: ${ctrlr_id}"
-            if [ ${ctrlr_id} -ne -1 ]; then
+            if [ "${ctrlr_id}" -ne 255 ]; then
                 if ! is_vd_owned ${ctrlr_id} ${target}; then
                     # It appears this VD is not owned by this node, fix it
                     ocf_log info "Attempting to own VD ${target} for" \

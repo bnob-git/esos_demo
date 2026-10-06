@@ -7,7 +7,7 @@ COROSYNC_LOCK="/var/lock/corosync"
 RC_COROSYNC_LOGGER="/usr/bin/logger -t rc.corosync -p daemon.info"
 DFLT_OPTS=""
 
-check_args ${@}
+check_args "${@}"
 
 SCRIPT="$(/usr/bin/basename ${0})"
 if check_opts_set ${SCRIPT}; then

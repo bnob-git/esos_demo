@@ -8,7 +8,7 @@ FCOEMON="/usr/sbin/fcoemon"
 FCOEMON_LOCK="/var/lock/fcoemon"
 DFLT_OPTS="-d"
 
-check_args ${@}
+check_args "${@}"
 
 SCRIPT="$(/usr/bin/basename ${0})"
 if check_opts_set ${SCRIPT}; then

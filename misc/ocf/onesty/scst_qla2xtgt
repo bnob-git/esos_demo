@@ -298,10 +298,10 @@ END
 qla2xtgt_start() {
   qla2xtgt_monitor
   rc=$?
-  if [ $rc = $OCF_SUCCESS ]
+  if [ $rc = "$OCF_SUCCESS" ]
   then
     return $OCF_SUCCESS
-  elif [ $rc = $OCF_NOT_RUNNING ]
+  elif [ $rc = "$OCF_NOT_RUNNING" ]
   then
     if [[ -z ${targetports[$localnodeid]} ]]
     then
@@ -319,7 +319,7 @@ qla2xtgt_start() {
 
 qla2xtgt_stop() {
   qla2xtgt_monitor
-  if [ $? = $OCF_NOT_RUNNING ]
+  if [ $? = "$OCF_NOT_RUNNING" ]
   then
     return $OCF_SUCCESS
   fi
@@ -344,14 +344,14 @@ qla2xtgt_stop() {
 qla2xtgt_reload() {
   qla2xtgt_monitor
   rc=$?
-  if [ $rc = $OCF_NOT_RUNNING ]
+  if [ $rc = "$OCF_NOT_RUNNING" ]
   then
     qla2xtgt_start
   else
     l_adjust_inigroups
   fi
   qla2xtgt_monitor
-  if [ $? =  $OCF_SUCCESS ]
+  if [ $? =  "$OCF_SUCCESS" ]
   then
     return $OCF_SUCCESS
   fi
@@ -404,13 +404,13 @@ qla2xtgt_validate() {
   then
     for inigroup_inis in $OCF_RESKEY_initiators
     do
-      key=$(echo $inigroup_inis | tr '=' ' ' | awk {'print $1'})
+      key=$(echo $inigroup_inis | tr '=' ' ' | awk '{print $1}')
       if [[ ! $key =~ $ALPHANUM_REGEX ]] || [[ ${#key} -gt 8 ]]
       then
         ocf_log warn "inigroup name must be alphanumeric and max 8 chars"
         continue
       fi
-      inigroup_inis=$(echo $inigroup_inis | tr '=' ' ' | awk {'print $2'})
+      inigroup_inis=$(echo $inigroup_inis | tr '=' ' ' | awk '{print $2}')
       if [[ ! -z ${inigroups[$key]} ]]
       then
         ocf_log warn "inigroup name must be unique"

@@ -7,7 +7,7 @@ COROSYNC_QNETD="/usr/bin/corosync-qnetd"
 QNETD_PID_FILE="/var/run/corosync-qnetd/corosync-qnetd.pid"
 QNETD_LOCK="/var/lock/qnetd"
 
-check_args ${@}
+check_args "${@}"
 
 # Load configuration (and export all variables)
 if [ -f "${QNETD_CONFIG}" ]; then

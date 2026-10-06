@@ -14,7 +14,7 @@
 #     meta target-role="Started"
 
 # Test for a failed monitor operation, or anything that isn't monitor
-if [ "x${CRM_notify_rc}" != "x0" -a "x${CRM_notify_task}" = "xmonitor" ] || \
+if { [ "x${CRM_notify_rc}" != "x0" ] && [ "x${CRM_notify_task}" = "xmonitor" ]; } || \
 	[ "x${CRM_notify_task}" != "xmonitor" ] && \
 	[ -n "${CRM_notify_recipient}" ]; then
 	# Send a notification email

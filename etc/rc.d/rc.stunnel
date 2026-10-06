@@ -6,7 +6,7 @@ STUNNEL="/usr/bin/stunnel"
 STUNNEL_LOCK="/var/lock/stunnel"
 DFLT_OPTS=""
 
-check_args ${@}
+check_args "${@}"
 
 SCRIPT="$(/usr/bin/basename ${0})"
 if check_opts_set ${SCRIPT}; then

@@ -79,7 +79,8 @@ done
 
 l_create_handler() {
   local rotational=1
-  local dgroupstate=$(cat $SCST_BASE/device_groups/${OCF_RESKEY_groupname}/target_groups/${nodes[$localnodeid]}/state 2>/dev/null | head -n 1)
+  local dgroupstate
+  dgroupstate=$(cat $SCST_BASE/device_groups/${OCF_RESKEY_groupname}/target_groups/${nodes[$localnodeid]}/state 2>/dev/null | head -n 1)
   device_num=$1
 
   virtname=${OCF_RESKEY_groupname}"_"${devices[$device_num,virtname]}
@@ -166,7 +167,7 @@ l_add_target_port() {
   local port=$4
   local portcount=$5
   echo add $port > $SCST_BASE/device_groups/$dgname/target_groups/$tgname/mgmt || return $OCF_ERR_GENERIC
-  if [[ "$(cat $SCST_BASE/device_groups/$dgname/target_groups/$tgname/$port/rel_tgt_id | egrep -o -m 1 '[0-9]+')" == "0" ]]
+  if [[ "$(cat $SCST_BASE/device_groups/$dgname/target_groups/$tgname/$port/rel_tgt_id | grep -E -o -m 1 '[0-9]+')" == "0" ]]
   then
     #this is a remote port, so set rel_tgt_id
     portid=$(($tgnum * 100 + $portcount))
@@ -211,7 +212,7 @@ l_create_targetgroup() {
 }
 
 l_create_targetgroups() {
-  for tgnum in ${!nodes[@]}
+  for tgnum in "${!nodes[@]}"
   do
     if [[ ! -z ${targetports[$tgnum]} ]]
     then
@@ -246,7 +247,7 @@ l_export_device_to_lun() {
 
   if [[ -d $SCST_BASE/targets/$OCF_RESKEY_tgtdriver/$port/ini_groups/$inigroup/luns/${lunnum} ]]
   then
-    luname=$(readlink -f $SCST_BASE/targets/$OCF_RESKEY_tgtdriver/$port/ini_groups/$inigroup/luns/${lunnum}/device | egrep -o "[a-zA-Z0-9_]+$")
+    luname=$(readlink -f $SCST_BASE/targets/$OCF_RESKEY_tgtdriver/$port/ini_groups/$inigroup/luns/${lunnum}/device | grep -E -o "[a-zA-Z0-9_]+$")
     if [[ "$virtname" == "$luname" ]]
     then
       ocf_log debug "lun ${lunnum} in ${inigroup} already holds ${virtname}"
@@ -308,15 +309,19 @@ l_export_devices() {
 
 l_remove_device_export() {
   local exp=$1
-  local reference=$(readlink -f $exp)
-  local lu=$(echo $reference | egrep -o '[0-9]+$')
-  local mgmtfile=$(echo $reference | egrep -o '.*/')"mgmt"
+  local reference
+  reference=$(readlink -f $exp)
+  local lu
+  lu=$(echo $reference | grep -E -o '[0-9]+$')
+  local mgmtfile
+  mgmtfile=$(echo $reference | grep -E -o '.*/')"mgmt"
   echo "del $lu" > $mgmtfile &
 }
 
 l_remove_device_exports() {
   local virtname=$1
-  local exports=$(find $SCST_BASE/devices/$virtname/exported/ -mindepth 1 -maxdepth 1 -type l)
+  local exports
+  exports=$(find $SCST_BASE/devices/$virtname/exported/ -mindepth 1 -maxdepth 1 -type l)
 
   for exp in $exports
   do
@@ -326,7 +331,7 @@ l_remove_device_exports() {
 }
 
 l_remove_exports() {
-  virtnames=$(find $SCST_BASE/handlers/ -maxdepth 2 -mindepth 2 -type l -name "${OCF_RESKEY_groupname}_*" | egrep -o "[a-zA-Z0-9_]+$")
+  virtnames=$(find $SCST_BASE/handlers/ -maxdepth 2 -mindepth 2 -type l -name "${OCF_RESKEY_groupname}_*" | grep -E -o "[a-zA-Z0-9_]+$")
   for virtname in $virtnames
   do
     l_remove_device_exports $virtname || return $OCF_ERR_GENERIC
@@ -336,7 +341,7 @@ l_remove_exports() {
 
 l_remove_handler() {
   local virtname=$1
-  handler=$(readlink -f $SCST_BASE/devices/$virtname/handler | egrep -o "[a-zA-Z0-9_]+$")
+  handler=$(readlink -f $SCST_BASE/devices/$virtname/handler | grep -E -o "[a-zA-Z0-9_]+$")
   echo "del_device ${virtname}" > $SCST_BASE/handlers/$handler/mgmt || return $OCF_ERR_GENERIC
 }
 
@@ -344,14 +349,14 @@ l_remove_handlers() {
   devices=$(find $SCST_BASE/handlers/ -maxdepth 2 -mindepth 2 -type l -name "${OCF_RESKEY_groupname}_*")
   for device in $devices
   do
-    virtname=$(echo $device | egrep -o "[a-zA-Z0-9_]+$")
+    virtname=$(echo $device | grep -E -o "[a-zA-Z0-9_]+$")
     l_remove_handler $virtname
   done
   return $OCF_SUCCESS
 }
 
 l_remove_obsolete_devices() {
-  existing_devices=$(find $SCST_BASE/handlers/ -maxdepth 2 -mindepth 2 -type l -name "${OCF_RESKEY_groupname}_*" | egrep -o "[a-zA-Z0-9]+$")
+  existing_devices=$(find $SCST_BASE/handlers/ -maxdepth 2 -mindepth 2 -type l -name "${OCF_RESKEY_groupname}_*" | grep -E -o "[a-zA-Z0-9]+$")
   for existing_device in $existing_devices
   do
     local in_config=0
@@ -380,9 +385,12 @@ l_remove_obsolete_exports() {
   for existing_export in $existing_exports
   do
     local in_config=0
-    local lu=$(readlink -f $existing_export | egrep -o [0-9]+$)
-    local driver=$(readlink -f $existing_export | egrep -o 'targets/[^/]+' | egrep -o '[^/]+$')
-    local inigroup=$(readlink -f $existing_export | egrep -o 'ini_groups/[^/]+' | egrep -o '[^/]+$')
+    local lu
+    lu=$(readlink -f $existing_export | grep -E -o [0-9]+$)
+    local driver
+    driver=$(readlink -f $existing_export | grep -E -o 'targets/[^/]+' | grep -E -o '[^/]+$')
+    local inigroup
+    inigroup=$(readlink -f $existing_export | grep -E -o 'ini_groups/[^/]+' | grep -E -o '[^/]+$')
 
     if [[ ! $driver == $OCF_RESKEY_tgtdriver ]] || [[ -z $inigroup ]]
     then
@@ -442,7 +450,8 @@ l_remove_devicegroup() {
 
 l_check_device_already_blocked() {
   local device=$1
-  local pending=$(cat $SCST_BASE/devices/${OCF_RESKEY_groupname}_${device}/block | egrep -o '[0-9]$')
+  local pending
+  pending=$(cat $SCST_BASE/devices/${OCF_RESKEY_groupname}_${device}/block | grep -E -o '[0-9]$')
   if [[ "$pending" -ne "0" ]]
   then
     return $OCF_ERR_GENERIC
@@ -453,7 +462,8 @@ l_check_device_already_blocked() {
 l_block_device() {
   local device=$1
   local rc
-  local isblocked=$(cat $SCST_BASE/devices/${OCF_RESKEY_groupname}_${device}/block | egrep -o '^[0-9]')
+  local isblocked
+  isblocked=$(cat $SCST_BASE/devices/${OCF_RESKEY_groupname}_${device}/block | grep -E -o '^[0-9]')
   if [[ "$isblocked" == "0" ]]
   then
     echo 11 > $SCST_BASE/devices/${OCF_RESKEY_groupname}_${device}/block 2>/dev/null
@@ -464,17 +474,18 @@ l_block_device() {
 l_unblock_device() {
   local device=$1
   local rc
-  local isblocked=$(cat $SCST_BASE/devices/${OCF_RESKEY_groupname}_${device}/block | egrep -o '^[0-9]')
+  local isblocked
+  isblocked=$(cat $SCST_BASE/devices/${OCF_RESKEY_groupname}_${device}/block | grep -E -o '^[0-9]')
   while [[ ! "$isblocked" == "0" ]]
   do
     echo 0 > $SCST_BASE/devices/${OCF_RESKEY_groupname}_${device}/block 2>/dev/null
-    isblocked=$(cat $SCST_BASE/devices/${OCF_RESKEY_groupname}_${device}/block | egrep -o '^[0-9]')
+    isblocked=$(cat $SCST_BASE/devices/${OCF_RESKEY_groupname}_${device}/block | grep -E -o '^[0-9]')
   done
   return $OCF_SUCCESS
 }
 
 l_block_devices(){
-  for device in $(ls $SCST_BASE/device_groups/$OCF_RESKEY_groupname/devices/${OCF_RESKEY_groupname}_* -d | egrep -o '[a-zA-Z0-9]+$')
+  for device in $(ls $SCST_BASE/device_groups/$OCF_RESKEY_groupname/devices/${OCF_RESKEY_groupname}_* -d | grep -E -o '[a-zA-Z0-9]+$')
   do
     l_block_device $device || return $OCF_ERR_GENERIC
   done
@@ -482,7 +493,7 @@ l_block_devices(){
   while [[ $notblocked -ne 0 ]]
   do
     notblocked=0
-    for device in $(ls $SCST_BASE/device_groups/$OCF_RESKEY_groupname/devices/${OCF_RESKEY_groupname}_* -d | egrep -o '[a-zA-Z0-9]+$')
+    for device in $(ls $SCST_BASE/device_groups/$OCF_RESKEY_groupname/devices/${OCF_RESKEY_groupname}_* -d | grep -E -o '[a-zA-Z0-9]+$')
     do
       if ! l_check_device_already_blocked $device
       then
@@ -496,7 +507,7 @@ l_block_devices(){
 }
 
 l_unblock_devices(){
-  for device in $(ls $SCST_BASE/device_groups/$OCF_RESKEY_groupname/devices/${OCF_RESKEY_groupname}_* -d | egrep -o '[a-zA-Z0-9]+$')
+  for device in $(ls $SCST_BASE/device_groups/$OCF_RESKEY_groupname/devices/${OCF_RESKEY_groupname}_* -d | grep -E -o '[a-zA-Z0-9]+$')
   do
     l_unblock_device $device || return $OCF_ERR_GENERIC
   done
@@ -748,7 +759,7 @@ aluadg_validate() {
           if [[ ! $inigroup =~ $ALPHANUM_REGEX ]] || [[ ${#inigroup} -gt 8 ]] || [[ ! ${lunnum} =~ $NUMERIC_REGEX ]] || [[ ${lunnum} -lt 0 ]] || [[ ${lunnum} -gt 256 ]]
           then
             ocf_log warn "$option_name invalid, ignoring export"
-            unset devices[$device_num,$option_name]
+            unset "devices[$device_num,$option_name]"
           fi
         fi
       done
@@ -912,7 +923,8 @@ aluadg_monitor() {
     then
       return $OCF_ERR_GENERIC
     fi
-    local state=$(cat $SCST_BASE/device_groups/$OCF_RESKEY_groupname/target_groups/${nodes[$localnodeid]}/state | head -n 1)
+    local state
+    state=$(cat $SCST_BASE/device_groups/$OCF_RESKEY_groupname/target_groups/${nodes[$localnodeid]}/state | head -n 1)
     case "$state" in
       "active")
         if [ $OCF_RESKEY_CRM_meta_interval = 0 ]; then

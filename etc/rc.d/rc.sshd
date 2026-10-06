@@ -6,7 +6,7 @@ SSHD="/usr/sbin/sshd"
 SSHD_LOCK="/var/lock/sshd"
 DFLT_OPTS="-f /etc/ssh/sshd_config"
 
-check_args ${@}
+check_args "${@}"
 
 SCRIPT="$(/usr/bin/basename ${0})"
 if check_opts_set ${SCRIPT}; then

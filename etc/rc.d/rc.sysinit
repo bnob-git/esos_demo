@@ -99,11 +99,11 @@ if ! /bin/grep -E 'esos_iso|esos_persist' /proc/cmdline > /dev/null 2>&1; then
         /usr/bin/sed -e '/\/dev\/sd/s/4//; /\/dev\/nvme/s/p4//')"
     if [ -n "${fs_node}" ]; then
         free_end=$(/usr/sbin/parted -m -s ${base_blk_dev} unit s print free | \
-            egrep ':free;$' | tail -n+2 | cut -d: -f3)
+            grep -E ':free;$' | tail -n+2 | cut -d: -f3)
         if [ -n "${free_end}" ]; then
             echo "Growing the esos_logs file system..."
             orig_start=`/usr/sbin/parted -m -s ${base_blk_dev} unit s print | \
-                egrep '^4:' | cut -d: -f2`
+                grep -E '^4:' | cut -d: -f2`
             /usr/sbin/parted -m -s ${base_blk_dev} rm 4
             /usr/sbin/parted -m -s ${base_blk_dev} mkpart primary \
                 ${orig_start} ${free_end}

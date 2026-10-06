@@ -195,9 +195,9 @@ echo -e "Memory Used Percent:\t$(echo ${prct_mem_used} | \
 echo
 
 # Check disk space (well, tmpfs/overlay root FS space)
-disk_total=$(df -m / | egrep 'tmpfs|overlay' | awk '{print $2}')
-disk_used=$(df -m / | egrep 'tmpfs|overlay' | awk '{print $3}')
-disk_avail=$(df -m / | egrep 'tmpfs|overlay' | awk '{print $4}')
+disk_total=$(df -m / | grep -E 'tmpfs|overlay' | awk '{print $2}')
+disk_used=$(df -m / | grep -E 'tmpfs|overlay' | awk '{print $3}')
+disk_avail=$(df -m / | grep -E 'tmpfs|overlay' | awk '{print $4}')
 echo "Disk (/ -> root tmpfs/overlay) space check..."
 echo -e "Total Disk Space:\t${disk_total} MB\nUsed Disk" \
     "Space:\t${disk_used} MB\nAvail. Disk Space:\t${disk_avail} MB"
