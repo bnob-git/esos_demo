@@ -17,6 +17,17 @@ ARCCONF_BIN = '/opt/sbin/arcconf'
 CTRLR_TYPES = ['MegaRAID', 'PERC', 'AACRAID']
 
 
+def run_cmd(command):
+    """Run an argument list (no shell); return (exit status, stdout+stderr)."""
+    try:
+        result = subprocess.run(command, stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT,
+                                universal_newlines=True)
+    except OSError as err:
+        return 127, '%s: %s' % (command[0], err)
+    return result.returncode, result.stdout
+
+
 class MegaRAID():
     def __init__(self):
         self.working = self.__is_tool_avail()
@@ -30,16 +41,14 @@ class MegaRAID():
         if not self.__is_tool_avail():
             return 0
         # Get the number of controllers
-        command = STORCLI_BIN + ' show ctrlcount 2>&1'
-        process = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True,
-                                   universal_newlines=True)
-        stdout, stderr = process.communicate()
-        cmd_exit = process.returncode
+        command = [STORCLI_BIN, 'show', 'ctrlcount']
+        cmd_exit, stdout = run_cmd(command)
         if cmd_exit == 0:
-            for line in iter(stdout.splitlines()):
+            for line in stdout.splitlines():
                 if 'Controller Count =' in line:
                     count = line.split('=')[1]
                     return int(count)
+        return 0
 
     def list_ctrlrs(self, id_num=-1):
         # Either for all, or a specific controller
@@ -51,14 +60,11 @@ class MegaRAID():
             first_id = id_num
         # Get the controller information and print it
         for each in range(first_id, last_id):
-            command = STORCLI_BIN + ' /c' + str(each) + ' show 2>&1'
-            process = subprocess.Popen(command, stdout=subprocess.PIPE,
-                                       shell=True, universal_newlines=True)
-            stdout, stderr = process.communicate()
-            cmd_exit = process.returncode
+            command = [STORCLI_BIN, '/c%d' % each, 'show']
+            cmd_exit, stdout = run_cmd(command)
             if cmd_exit == 0:
                 model = serial = ''
-                for line in iter(stdout.splitlines()):
+                for line in stdout.splitlines():
                     if 'Product Name =' in line:
                         model = line.split('=')[1].strip()
                     elif 'Serial Number =' in line:
@@ -75,15 +81,12 @@ class MegaRAID():
             first_id = id_num
         # Get the physical drives and print them
         for each in range(first_id, last_id):
-            command = STORCLI_BIN + ' /c' + str(each) + '/eall/sall show 2>&1'
-            process = subprocess.Popen(command, stdout=subprocess.PIPE,
-                                       shell=True, universal_newlines=True)
-            stdout, stderr = process.communicate()
-            cmd_exit = process.returncode
+            command = [STORCLI_BIN, '/c%d/eall/sall' % each, 'show']
+            cmd_exit, stdout = run_cmd(command)
             if cmd_exit == 0:
                 dash_line_cnt = 0
                 encl_id = slot_num = state = size = model = ''
-                for line in iter(stdout.splitlines()):
+                for line in stdout.splitlines():
                     if '----------' in line:
                         dash_line_cnt += 1
                         continue
@@ -113,15 +116,12 @@ class MegaRAID():
             first_id = id_num
         # Get the logical drives and print them
         for each in range(first_id, last_id):
-            command = STORCLI_BIN + ' /c' + str(each) + '/vall show 2>&1'
-            process = subprocess.Popen(command, stdout=subprocess.PIPE,
-                                       shell=True, universal_newlines=True)
-            stdout, stderr = process.communicate()
-            cmd_exit = process.returncode
+            command = [STORCLI_BIN, '/c%d/vall' % each, 'show']
+            cmd_exit, stdout = run_cmd(command)
             if cmd_exit == 0:
                 dash_line_cnt = 0
                 ld_id = raid_lvl = state = size = name = ''
-                for line in iter(stdout.splitlines()):
+                for line in stdout.splitlines():
                     if '----------' in line:
                         dash_line_cnt += 1
                         continue
@@ -150,51 +150,39 @@ class MegaRAID():
             write_opt = "wb"
         else:
             write_opt = "wt"
-        command = STORCLI_BIN + ' /c' + str(ctrlr_id) + ' add vd r' + \
-                  raid_lvl + ' drives=' + phys_drives + ' ' + read_opt + \
-                  ' ' + write_opt + ' 2>&1'
-        process = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True,
-                                   universal_newlines=True)
-        stdout, stderr = process.communicate()
-        cmd_exit = process.returncode
+        command = [STORCLI_BIN, '/c%d' % ctrlr_id, 'add', 'vd',
+                   'r' + raid_lvl, 'drives=' + phys_drives, read_opt,
+                   write_opt]
+        cmd_exit, stdout = run_cmd(command)
         if cmd_exit != 0:
             print(stdout)
             sys.exit(cmd_exit)
 
     def rem_log_drive(self, ctrlr_id, ld_id):
         # All arguments are required, so build the command and execute it
-        command = STORCLI_BIN + ' /c' + str(ctrlr_id) + '/v' + \
-                  str(ld_id) + ' del force 2>&1'
-        process = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True,
-                                   universal_newlines=True)
-        stdout, stderr = process.communicate()
-        cmd_exit = process.returncode
+        command = [STORCLI_BIN, '/c%d/v%d' % (ctrlr_id, ld_id), 'del',
+                   'force']
+        cmd_exit, stdout = run_cmd(command)
         if cmd_exit != 0:
             print(stdout)
             sys.exit(cmd_exit)
 
     def add_hsp_drive(self, ctrlr_id, encl_id, slot_num):
         # All arguments are required, so build the command and execute it
-        command = STORCLI_BIN + ' /c' + str(ctrlr_id) + '/e' + \
-                  str(encl_id) + '/s' + str(slot_num) + \
-                  ' add hotsparedrive 2>&1'
-        process = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True,
-                                   universal_newlines=True)
-        stdout, stderr = process.communicate()
-        cmd_exit = process.returncode
+        command = [STORCLI_BIN,
+                   '/c%d/e%d/s%d' % (ctrlr_id, encl_id, slot_num),
+                   'add', 'hotsparedrive']
+        cmd_exit, stdout = run_cmd(command)
         if cmd_exit != 0:
             print(stdout)
             sys.exit(cmd_exit)
 
     def rem_hsp_drive(self, ctrlr_id, encl_id, slot_num):
         # All arguments are required, so build the command and execute it
-        command = STORCLI_BIN + ' /c' + str(ctrlr_id) + '/e' + \
-                  str(encl_id) + '/s' + str(slot_num) + \
-                  ' delete hotsparedrive 2>&1'
-        process = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True,
-                                   universal_newlines=True)
-        stdout, stderr = process.communicate()
-        cmd_exit = process.returncode
+        command = [STORCLI_BIN,
+                   '/c%d/e%d/s%d' % (ctrlr_id, encl_id, slot_num),
+                   'delete', 'hotsparedrive']
+        cmd_exit, stdout = run_cmd(command)
         if cmd_exit != 0:
             print(stdout)
             sys.exit(cmd_exit)
@@ -213,16 +201,14 @@ class PERC():
         if not self.__is_tool_avail():
             return 0
         # Get the number of controllers
-        command = PERCCLI_BIN + ' show ctrlcount 2>&1'
-        process = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True,
-                                   universal_newlines=True)
-        stdout, stderr = process.communicate()
-        cmd_exit = process.returncode
+        command = [PERCCLI_BIN, 'show', 'ctrlcount']
+        cmd_exit, stdout = run_cmd(command)
         if cmd_exit == 0:
-            for line in iter(stdout.splitlines()):
+            for line in stdout.splitlines():
                 if 'Controller Count =' in line:
                     count = line.split('=')[1]
                     return int(count)
+        return 0
 
     def list_ctrlrs(self, id_num=-1):
         # Either for all, or a specific controller
@@ -234,14 +220,11 @@ class PERC():
             first_id = id_num
         # Get the controller information and print it
         for each in range(first_id, last_id):
-            command = PERCCLI_BIN + ' /c' + str(each) + ' show 2>&1'
-            process = subprocess.Popen(command, stdout=subprocess.PIPE,
-                                       shell=True, universal_newlines=True)
-            stdout, stderr = process.communicate()
-            cmd_exit = process.returncode
+            command = [PERCCLI_BIN, '/c%d' % each, 'show']
+            cmd_exit, stdout = run_cmd(command)
             if cmd_exit == 0:
                 model = serial = ''
-                for line in iter(stdout.splitlines()):
+                for line in stdout.splitlines():
                     if 'Product Name =' in line:
                         model = line.split('=')[1].strip()
                     elif 'Serial Number =' in line:
@@ -258,15 +241,12 @@ class PERC():
             first_id = id_num
         # Get the physical drives and print them
         for each in range(first_id, last_id):
-            command = PERCCLI_BIN + ' /c' + str(each) + '/eall/sall show 2>&1'
-            process = subprocess.Popen(command, stdout=subprocess.PIPE,
-                                       shell=True, universal_newlines=True)
-            stdout, stderr = process.communicate()
-            cmd_exit = process.returncode
+            command = [PERCCLI_BIN, '/c%d/eall/sall' % each, 'show']
+            cmd_exit, stdout = run_cmd(command)
             if cmd_exit == 0:
                 dash_line_cnt = 0
                 encl_id = slot_num = state = size = model = ''
-                for line in iter(stdout.splitlines()):
+                for line in stdout.splitlines():
                     if '----------' in line:
                         dash_line_cnt += 1
                         continue
@@ -296,15 +276,12 @@ class PERC():
             first_id = id_num
         # Get the logical drives and print them
         for each in range(first_id, last_id):
-            command = PERCCLI_BIN + ' /c' + str(each) + '/vall show 2>&1'
-            process = subprocess.Popen(command, stdout=subprocess.PIPE,
-                                       shell=True, universal_newlines=True)
-            stdout, stderr = process.communicate()
-            cmd_exit = process.returncode
+            command = [PERCCLI_BIN, '/c%d/vall' % each, 'show']
+            cmd_exit, stdout = run_cmd(command)
             if cmd_exit == 0:
                 dash_line_cnt = 0
                 ld_id = raid_lvl = state = size = name = ''
-                for line in iter(stdout.splitlines()):
+                for line in stdout.splitlines():
                     if '----------' in line:
                         dash_line_cnt += 1
                         continue
@@ -333,51 +310,39 @@ class PERC():
             write_opt = "wb"
         else:
             write_opt = "wt"
-        command = PERCCLI_BIN + ' /c' + str(ctrlr_id) + ' add vd r' + \
-                  raid_lvl + ' drives=' + phys_drives + ' ' + read_opt + \
-                  ' ' + write_opt + ' 2>&1'
-        process = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True,
-                                   universal_newlines=True)
-        stdout, stderr = process.communicate()
-        cmd_exit = process.returncode
+        command = [PERCCLI_BIN, '/c%d' % ctrlr_id, 'add', 'vd',
+                   'r' + raid_lvl, 'drives=' + phys_drives, read_opt,
+                   write_opt]
+        cmd_exit, stdout = run_cmd(command)
         if cmd_exit != 0:
             print(stdout)
             sys.exit(cmd_exit)
 
     def rem_log_drive(self, ctrlr_id, ld_id):
         # All arguments are required, so build the command and execute it
-        command = PERCCLI_BIN + ' /c' + str(ctrlr_id) + '/v' + \
-                  str(ld_id) + ' del force 2>&1'
-        process = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True,
-                                   universal_newlines=True)
-        stdout, stderr = process.communicate()
-        cmd_exit = process.returncode
+        command = [PERCCLI_BIN, '/c%d/v%d' % (ctrlr_id, ld_id), 'del',
+                   'force']
+        cmd_exit, stdout = run_cmd(command)
         if cmd_exit != 0:
             print(stdout)
             sys.exit(cmd_exit)
 
     def add_hsp_drive(self, ctrlr_id, encl_id, slot_num):
         # All arguments are required, so build the command and execute it
-        command = PERCCLI_BIN + ' /c' + str(ctrlr_id) + '/e' + \
-                  str(encl_id) + '/s' + str(slot_num) + \
-                  ' add hotsparedrive 2>&1'
-        process = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True,
-                                   universal_newlines=True)
-        stdout, stderr = process.communicate()
-        cmd_exit = process.returncode
+        command = [PERCCLI_BIN,
+                   '/c%d/e%d/s%d' % (ctrlr_id, encl_id, slot_num),
+                   'add', 'hotsparedrive']
+        cmd_exit, stdout = run_cmd(command)
         if cmd_exit != 0:
             print(stdout)
             sys.exit(cmd_exit)
 
     def rem_hsp_drive(self, ctrlr_id, encl_id, slot_num):
         # All arguments are required, so build the command and execute it
-        command = PERCCLI_BIN + ' /c' + str(ctrlr_id) + '/e' + \
-                  str(encl_id) + '/s' + str(slot_num) + \
-                  ' delete hotsparedrive 2>&1'
-        process = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True,
-                                   universal_newlines=True)
-        stdout, stderr = process.communicate()
-        cmd_exit = process.returncode
+        command = [PERCCLI_BIN,
+                   '/c%d/e%d/s%d' % (ctrlr_id, encl_id, slot_num),
+                   'delete', 'hotsparedrive']
+        cmd_exit, stdout = run_cmd(command)
         if cmd_exit != 0:
             print(stdout)
             sys.exit(cmd_exit)
@@ -396,16 +361,14 @@ class AACRAID():
         if not self.__is_tool_avail():
             return 0
         # Get the number of controllers
-        command = ARCCONF_BIN + ' getversion 2>&1'
-        process = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True,
-                                   universal_newlines=True)
-        stdout, stderr = process.communicate()
-        cmd_exit = process.returncode
+        command = [ARCCONF_BIN, 'getversion']
+        cmd_exit, stdout = run_cmd(command)
         if cmd_exit == 0:
-            for line in iter(stdout.splitlines()):
+            for line in stdout.splitlines():
                 if 'Controllers found:' in line:
                     count = line.split(':')[1]
                     return int(count)
+        return 0
 
     def list_ctrlrs(self, id_num=-1):
         # Either for all, or a specific controller
@@ -417,14 +380,11 @@ class AACRAID():
             first_id = id_num
         # Get the controller information and print it
         for each in range(first_id, last_id):
-            command = ARCCONF_BIN + ' getconfig ' + str(each) + ' ad 2>&1'
-            process = subprocess.Popen(command, stdout=subprocess.PIPE,
-                                       shell=True, universal_newlines=True)
-            stdout, stderr = process.communicate()
-            cmd_exit = process.returncode
+            command = [ARCCONF_BIN, 'getconfig', str(each), 'ad']
+            cmd_exit, stdout = run_cmd(command)
             if cmd_exit == 0:
                 model = serial = ''
-                for line in iter(stdout.splitlines()):
+                for line in stdout.splitlines():
                     if 'Controller Model' in line:
                         model = line.split(':')[1].strip()
                     elif 'Controller Serial Number' in line:
@@ -441,16 +401,13 @@ class AACRAID():
             first_id = id_num
         # Get the physical drives and print them
         for each in range(first_id, last_id):
-            command = ARCCONF_BIN + ' getconfig ' + str(each) + ' pd 2>&1'
-            process = subprocess.Popen(command, stdout=subprocess.PIPE,
-                                       shell=True, universal_newlines=True)
-            stdout, stderr = process.communicate()
-            cmd_exit = process.returncode
+            command = [ARCCONF_BIN, 'getconfig', str(each), 'pd']
+            cmd_exit, stdout = run_cmd(command)
             if cmd_exit == 0:
                 found_drive = False
                 encl_id = slot_num = state = size = model = ''
                 pd_in_use = False
-                for line in iter(stdout.splitlines()):
+                for line in stdout.splitlines():
                     if 'Device is a Hard drive' in line:
                         found_drive = True
                         continue
@@ -492,16 +449,12 @@ class AACRAID():
             first_id = id_num
         # Get the logical drives and print them
         for each in range(first_id, last_id):
-            command = ARCCONF_BIN + ' getconfig ' + str(each) + ' ld 2>&1'
-            process = subprocess.Popen(command, stdout=subprocess.PIPE,
-                                       shell=True, universal_newlines=True)
-            stdout, stderr = process.communicate()
-            cmd_exit = process.returncode
+            command = [ARCCONF_BIN, 'getconfig', str(each), 'ld']
+            cmd_exit, stdout = run_cmd(command)
             if cmd_exit == 0:
                 found_drive = False
                 ld_id = raid_lvl = state = size = name = ''
-                pd_in_use = False
-                for line in iter(stdout.splitlines()):
+                for line in stdout.splitlines():
                     if 'Logical device number' in line:
                         ld_id = line.split(' ')[3].strip()
                         found_drive = True
@@ -534,55 +487,39 @@ class AACRAID():
             write_opt = "wb"
         else:
             write_opt = "wt"
-        command = ARCCONF_BIN + ' create ' + str(ctrlr_id) + \
-                  ' logicaldrive ' + read_opt + ' ' + write_opt + \
-                  ' max ' + raid_lvl
+        command = [ARCCONF_BIN, 'create', str(ctrlr_id), 'logicaldrive',
+                   read_opt, write_opt, 'max', raid_lvl]
         for each in phys_drives.split(','):
             encl_slot = each.split(':')
-            command = command + ' ' + encl_slot[0] + ' ' + encl_slot[1]
-        command = command + ' 2>&1'
-        process = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True,
-                                   universal_newlines=True)
-        stdout, stderr = process.communicate()
-        cmd_exit = process.returncode
+            command += [encl_slot[0], encl_slot[1]]
+        cmd_exit, stdout = run_cmd(command)
         if cmd_exit != 0:
             print(stdout)
             sys.exit(cmd_exit)
 
     def rem_log_drive(self, ctrlr_id, ld_id):
         # All arguments are required, so build the command and execute it
-        command = ARCCONF_BIN + ' delete ' + str(ctrlr_id) + \
-                  ' logicaldrive ' + str(ld_id) + ' noprompt 2>&1'
-        process = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True,
-                                   universal_newlines=True)
-        stdout, stderr = process.communicate()
-        cmd_exit = process.returncode
+        command = [ARCCONF_BIN, 'delete', str(ctrlr_id), 'logicaldrive',
+                   str(ld_id), 'noprompt']
+        cmd_exit, stdout = run_cmd(command)
         if cmd_exit != 0:
             print(stdout)
             sys.exit(cmd_exit)
 
     def add_hsp_drive(self, ctrlr_id, encl_id, slot_num):
         # All arguments are required, so build the command and execute it
-        command = ARCCONF_BIN + ' setstate ' + str(ctrlr_id) + \
-                  ' device ' + str(encl_id) + ' ' + str(slot_num) + \
-                  ' hsp noprompt 2>&1'
-        process = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True,
-                                   universal_newlines=True)
-        stdout, stderr = process.communicate()
-        cmd_exit = process.returncode
+        command = [ARCCONF_BIN, 'setstate', str(ctrlr_id), 'device',
+                   str(encl_id), str(slot_num), 'hsp', 'noprompt']
+        cmd_exit, stdout = run_cmd(command)
         if cmd_exit != 0:
             print(stdout)
             sys.exit(cmd_exit)
 
     def rem_hsp_drive(self, ctrlr_id, encl_id, slot_num):
         # All arguments are required, so build the command and execute it
-        command = ARCCONF_BIN + ' setstate ' + str(ctrlr_id) + \
-                  ' device ' + str(encl_id) + ' ' + str(slot_num) + \
-                  ' rdy noprompt 2>&1'
-        process = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True,
-                                   universal_newlines=True)
-        stdout, stderr = process.communicate()
-        cmd_exit = process.returncode
+        command = [ARCCONF_BIN, 'setstate', str(ctrlr_id), 'device',
+                   str(encl_id), str(slot_num), 'rdy', 'noprompt']
+        cmd_exit, stdout = run_cmd(command)
         if cmd_exit != 0:
             print(stdout)
             sys.exit(cmd_exit)
